@@ -1,0 +1,492 @@
+[
+ {
+  "id": "fm_crossing",
+  "name": "Crossing",
+  "index": 0,
+  "offset": "0x217",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_dribbling",
+  "name": "Dribbling",
+  "index": 1,
+  "offset": "0x218",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_finishing",
+  "name": "Finishing",
+  "index": 2,
+  "offset": "0x219",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_heading",
+  "name": "Heading",
+  "index": 3,
+  "offset": "0x21a",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_long_shots",
+  "name": "Long Shots",
+  "index": 4,
+  "offset": "0x21b",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_marking",
+  "name": "Marking",
+  "index": 5,
+  "offset": "0x21c",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_off_the_ball",
+  "name": "Off The Ball",
+  "index": 6,
+  "offset": "0x21d",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_passing",
+  "name": "Passing",
+  "index": 7,
+  "offset": "0x21e",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_penalty_taking",
+  "name": "Penalty Taking",
+  "index": 8,
+  "offset": "0x21f",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_tackling",
+  "name": "Tackling",
+  "index": 9,
+  "offset": "0x220",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_vision",
+  "name": "Vision",
+  "index": 10,
+  "offset": "0x221",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_handling",
+  "name": "Handling",
+  "index": 11,
+  "offset": "0x222",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_aerial_reach",
+  "name": "Aerial Reach",
+  "index": 12,
+  "offset": "0x223",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_command_of_area",
+  "name": "Command Of Area",
+  "index": 13,
+  "offset": "0x224",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_communication",
+  "name": "Communication",
+  "index": 14,
+  "offset": "0x225",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_kicking",
+  "name": "Kicking",
+  "index": 15,
+  "offset": "0x226",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_throwing",
+  "name": "Throwing",
+  "index": 16,
+  "offset": "0x227",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_anticipation",
+  "name": "Anticipation",
+  "index": 17,
+  "offset": "0x228",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_decisions",
+  "name": "Decisions",
+  "index": 18,
+  "offset": "0x229",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_one_on_ones",
+  "name": "One On Ones",
+  "index": 19,
+  "offset": "0x22a",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_positioning",
+  "name": "Positioning",
+  "index": 20,
+  "offset": "0x22b",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_reflexes",
+  "name": "Reflexes",
+  "index": 21,
+  "offset": "0x22c",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_first_touch",
+  "name": "First Touch",
+  "index": 22,
+  "offset": "0x22d",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_technique",
+  "name": "Technique",
+  "index": 23,
+  "offset": "0x22e",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_left_foot",
+  "name": "Left Foot",
+  "index": 24,
+  "offset": "0x22f",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Foot",
+  "verified": "Marquinhos UI 'Preferred foot: Left' with Left Foot=100, Right Foot=45; Seimen UI 'Left' with 100/45"
+ },
+ {
+  "id": "fm_right_foot",
+  "name": "Right Foot",
+  "index": 25,
+  "offset": "0x230",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Foot",
+  "verified": "Marquinhos UI 'Preferred foot: Left' with Left Foot=100, Right Foot=45; Seimen UI 'Left' with 100/45"
+ },
+ {
+  "id": "fm_flair",
+  "name": "Flair",
+  "index": 26,
+  "offset": "0x231",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_corners",
+  "name": "Corners",
+  "index": 27,
+  "offset": "0x232",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_teamwork",
+  "name": "Teamwork",
+  "index": 28,
+  "offset": "0x233",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_work_rate",
+  "name": "Work Rate",
+  "index": 29,
+  "offset": "0x234",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_long_throws",
+  "name": "Long Throws",
+  "index": 30,
+  "offset": "0x235",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_eccentricity",
+  "name": "Eccentricity",
+  "index": 31,
+  "offset": "0x236",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_rushing_out",
+  "name": "Rushing Out",
+  "index": 32,
+  "offset": "0x237",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_punching_tendency",
+  "name": "Punching (Tendency)",
+  "index": 33,
+  "offset": "0x238",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Goalkeeping",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Dennis Seimen (GK) profile research/shots/fm15.png matches all 13 goalkeeping values"
+ },
+ {
+  "id": "fm_acceleration",
+  "name": "Acceleration",
+  "index": 34,
+  "offset": "0x239",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_free_kick_taking",
+  "name": "Free Kick Taking",
+  "index": 35,
+  "offset": "0x23a",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Technical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_strength",
+  "name": "Strength",
+  "index": 36,
+  "offset": "0x23b",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_stamina",
+  "name": "Stamina",
+  "index": 37,
+  "offset": "0x23c",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_pace",
+  "name": "Pace",
+  "index": 38,
+  "offset": "0x23d",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_jumping_reach",
+  "name": "Jumping Reach",
+  "index": 39,
+  "offset": "0x23e",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_leadership",
+  "name": "Leadership",
+  "index": 40,
+  "offset": "0x23f",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_balance",
+  "name": "Balance",
+  "index": 42,
+  "offset": "0x241",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_bravery",
+  "name": "Bravery",
+  "index": 43,
+  "offset": "0x242",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_aggression",
+  "name": "Aggression",
+  "index": 45,
+  "offset": "0x244",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_agility",
+  "name": "Agility",
+  "index": 46,
+  "offset": "0x245",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_natural_fitness",
+  "name": "Natural Fitness",
+  "index": 50,
+  "offset": "0x249",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Physical",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_determination",
+  "name": "Determination",
+  "index": 51,
+  "offset": "0x24a",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_composure",
+  "name": "Composure",
+  "index": 52,
+  "offset": "0x24b",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ },
+ {
+  "id": "fm_concentration",
+  "name": "Concentration",
+  "index": 53,
+  "offset": "0x24c",
+  "type": "u8",
+  "scale": "1-100 (UI shows round(v/5))",
+  "group": "Mental",
+  "verified": "fm24 24.4.0 live read 2026-10-09: Marquinhos (Oldham) profile screenshot research/shots/fm07.png matches all 36 visible values (value/5 rounded)"
+ }
+]

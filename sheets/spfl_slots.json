@@ -1,0 +1,26 @@
+[
+ {
+  "id": "spare_slot_1",
+  "team_id": 199,
+  "original_name": "Zalgiris Vilnius",
+  "menu_group": "Other European Leagues",
+  "why": "real club in no SPFL26 competition, 26 players; only plain kit definitions (199_DEF_1st.bin, no _realUni) = the game's generic editable kit, no crest/sponsor textures; Team.bin +0x4f nibble 2",
+  "verified": "SPFL26 2.2.0 live 2026-10-09: Team.bin rename shows 'Oldham Athletic' under Other European Leagues; UniformParameter.bin (data_s25262b) 2026-10-10: 199 has 1st/2nd/GK1st plain only"
+ },
+ {
+  "id": "spare_slot_2",
+  "team_id": 200,
+  "original_name": "Ceres Negros",
+  "menu_group": "Other Clubs (Asia)",
+  "why": "in no competition, 23 players, plain kits only; listed under Other Clubs (Asia) (+0x4f nibble 3). Writing nibble 2 into the match Team.bin did NOT move it to Other European Leagues (live test 2026-10-10: not in that list), and the live edit-block team records hold no such field, so the bridge picks it from its own group",
+  "verified": "UniformParameter.bin 2026-10-10: 200 has 1st/2nd/GK1st plain only"
+ },
+ {
+  "id": "spare_slot_3",
+  "team_id": 899,
+  "original_name": "Zamora FC",
+  "menu_group": "Other Latin American Teams",
+  "why": "third choice, only when an FM club is one of the slots above; 24 players, plain kits only; nibble 6 = Other Latin American Teams",
+  "verified": "UniformParameter.bin 2026-10-10: 899 has 1st/2nd/GK1st plain only"
+ }
+]

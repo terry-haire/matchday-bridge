@@ -1,0 +1,16 @@
+# Run Matchday Bridge from source and build MatchdayBridge.exe (Windows, Python 3.11):
+#   python -m pip install -r requirements.txt
+#   pyinstaller MatchdayBridge.spec
+numpy==2.4.6
+pillow==12.3.0
+zstandard==0.25.0
+windows-capture==2.0.1
+winrt-runtime==3.2.1
+winrt-Windows.Foundation==3.2.1
+winrt-Windows.Foundation.Collections==3.2.1
+winrt-Windows.Globalization==3.2.1
+winrt-Windows.Graphics.Imaging==3.2.1
+winrt-Windows.Media.Ocr==3.2.1
+winrt-Windows.Storage.Streams==3.2.1
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8

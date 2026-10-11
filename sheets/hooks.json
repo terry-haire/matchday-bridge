@@ -1,0 +1,101 @@
+[
+ {
+  "id": "fm_detect_matchday",
+  "game": "fm24",
+  "event": "GAME_MATCH whose teams include the human manager's club (team news)",
+  "kind": "read",
+  "sheet_ref": "fm_structs:fm_gm_vtable",
+  "implemented": true,
+  "verified": "fm24 24.4.0 live read 2026-10-09, lab save, Atlanta United v Oldham friendly; other clubs' GAME_MATCHes skipped (Teplice v Porto case)"
+ },
+ {
+  "id": "fm_read_squads",
+  "game": "fm24",
+  "event": "read both MATCH_PLAYER rosters + ACTUAL_PLAYER data",
+  "kind": "read",
+  "sheet_ref": "fm_structs:fm_gm_roster",
+  "implemented": true,
+  "verified": "fm24 24.4.0 live 2026-10-09: Atlanta v Oldham (18+18) and Birmingham Legion v Oldham (17+18) match FM's official roster screens"
+ },
+ {
+  "id": "fm_write_score",
+  "game": "fm24",
+  "event": "write SPFL score into FM before commit",
+  "kind": "write",
+  "sheet_ref": "fm_structs:fm_result_writeback",
+  "implemented": true,
+  "verified": ""
+ },
+ {
+  "id": "fm_write_scorers",
+  "game": "fm24",
+  "event": "write scorers/minutes",
+  "kind": "write",
+  "sheet_ref": "fm_structs:fm_mp_goals",
+  "implemented": false,
+  "verified": ""
+ },
+ {
+  "id": "fm_write_cards",
+  "game": "fm24",
+  "event": "write yellow/red cards",
+  "kind": "write",
+  "sheet_ref": "fm_structs:fm_result_writeback",
+  "implemented": false,
+  "verified": ""
+ },
+ {
+  "id": "fm_write_injuries",
+  "game": "fm24",
+  "event": "create INJURY@db for injured players",
+  "kind": "write",
+  "sheet_ref": "fm_structs:fm_result_writeback",
+  "implemented": false,
+  "verified": ""
+ },
+ {
+  "id": "spfl_db_override",
+  "game": "spfl26",
+  "event": "livecpk_get_filepath",
+  "kind": "data",
+  "sheet_ref": "pes_player_fields:pes_height",
+  "implemented": true,
+  "verified": "SPFL26 2.2 live 2026-10-09: team select shows FM-based ratings (Atlanta FW84/MF74/DF57, Oldham FW88/MF87/DF75); pre-match and in-match names are the FM24 squads (pesB4/pesC5)"
+ },
+ {
+  "id": "spfl_banner",
+  "game": "spfl26",
+  "event": "overlay_on",
+  "kind": "ui",
+  "sheet_ref": "ui_text:banner",
+  "implemented": true,
+  "verified": ""
+ },
+ {
+  "id": "spfl_result_capture",
+  "game": "spfl26",
+  "event": "display_frame",
+  "kind": "read",
+  "sheet_ref": "ui_text:result_saved",
+  "implemented": true,
+  "verified": "SPFL26 2.2 live 2026-10-09: result.txt tracked 0-0, 0-1 (HT), 0-3, 0-4 and final=1 on leaving the match; request marked done"
+ },
+ {
+  "id": "spfl_scorers_capture",
+  "game": "spfl26",
+  "event": "display_frame",
+  "kind": "read",
+  "sheet_ref": "ui_text:result_saved",
+  "implemented": false,
+  "verified": ""
+ },
+ {
+  "id": "spfl_autokickoff",
+  "game": "spfl26",
+  "event": "menu automation to kickoff",
+  "kind": "input",
+  "sheet_ref": "ui_text:pick_teams",
+  "implemented": false,
+  "verified": ""
+ }
+]

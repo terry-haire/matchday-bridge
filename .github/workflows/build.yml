@@ -1,0 +1,117 @@
+# Builds MatchdayBridge.exe on every push and pull request; every push to main also publishes it as a GitHub
+# release numbered v<VERSION_BASE>.<n> (v1.0.1, v1.0.2, ...).
+name: Build and release
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  VERSION_BASE: "1.0"   # change to e.g. 1.1 to start a new series at v1.1.1
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Offline tests
+        run: python tests/test_own_goals.py
+
+      - name: Build MatchdayBridge.exe
+        run: pyinstaller MatchdayBridge.spec --noconfirm --clean
+
+      # The bundled modules (capture, OCR, Tk/Pillow, controller proxy) load and log; no game is needed.
+      - name: Self-test the exe
+        shell: pwsh
+        run: |
+          $log = Join-Path $env:LOCALAPPDATA 'MatchdayBridge\bridge.log'
+          $p = Start-Process dist\MatchdayBridge.exe -ArgumentList '--selftest' -PassThru
+          $null = $p.Handle                     # keeps the exit code readable after the process ends
+          if (-not $p.WaitForExit(120000)) {
+            Stop-Process -Id $p.Id -Force
+            throw 'The self-test did not finish within 2 minutes.'
+          }
+          if (Test-Path $log) { Get-Content $log -Tail 5 }
+          $text = if (Test-Path $log) { Get-Content $log -Raw } else { '' }
+          if ($p.ExitCode -ne 0 -or $text -notmatch 'selftest: SPFL26 window' -or $text -match 'proxy MISSING') {
+            throw "The self-test failed (exit code $($p.ExitCode))."
+          }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $dir = 'package\MatchdayBridge'
+          New-Item -ItemType Directory $dir -Force | Out-Null
+          Copy-Item dist\MatchdayBridge.exe, README.md, THIRD_PARTY_NOTICES.md, 'packaging\Uninstall Matchday Bridge.cmd' $dir
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MatchdayBridge
+          path: package/
+          if-no-files-found: error
+
+  release:
+    name: Release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: release                     # one at a time, so two pushes never get the same number
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0                 # every tag (the next number) and the history (the change list)
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: MatchdayBridge
+          path: package
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if git tag --points-at HEAD | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "This commit is already released: $(git tag --points-at HEAD | tr '\n' ' ')"
+            exit 0
+          fi
+          esc=${VERSION_BASE//./\\.}
+          last=$(git tag --list "v${VERSION_BASE}.*" | sed -nE "s/^v${esc}\.([0-9]+)\$/\1/p" | sort -n | tail -n 1)
+          tag="v${VERSION_BASE}.$(( ${last:-0} + 1 ))"
+          prev=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null || true)
+          zipname="MatchdayBridge-${tag}.zip"
+          (cd package && zip -qr "../${zipname}" MatchdayBridge)
+          {
+            echo "Play Football Manager 2024 match days in SP Football Life 2026."
+            echo
+            echo "**Install:** close SP Football Life 2026, unzip \`${zipname}\`, run \`MatchdayBridge.exe\` and accept the Windows prompt. Full instructions are in \`README.md\` inside the zip."
+            echo
+            echo "### Changes${prev:+ since ${prev}}"
+            git log --no-merges --pretty='- %s' ${prev:+"${prev}.."}HEAD | sed -n '1,60p'
+          } > notes.md
+          cat notes.md
+          gh release create "$tag" "$zipname" --target "$GITHUB_SHA" --title "Matchday Bridge ${tag}" --notes-file notes.md

@@ -1,0 +1,257 @@
+[
+ {
+  "id": "rate_offensive_awareness",
+  "pes_ability": "Offensive Awareness",
+  "weights": {
+   "Off The Ball": 0.5,
+   "Anticipation": 0.2,
+   "Composure": 0.15,
+   "Finishing": 0.15
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_ball_control",
+  "pes_ability": "Ball Control",
+  "weights": {
+   "First Touch": 0.6,
+   "Technique": 0.4
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_dribbling",
+  "pes_ability": "Dribbling",
+  "weights": {
+   "Dribbling": 0.7,
+   "Agility": 0.15,
+   "Flair": 0.15
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_tight_possession",
+  "pes_ability": "Tight Possession",
+  "weights": {
+   "Dribbling": 0.4,
+   "Balance": 0.3,
+   "Agility": 0.3
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_low_pass",
+  "pes_ability": "Low Pass",
+  "weights": {
+   "Passing": 0.7,
+   "Vision": 0.3
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_lofted_pass",
+  "pes_ability": "Lofted Pass",
+  "weights": {
+   "Passing": 0.5,
+   "Crossing": 0.3,
+   "Vision": 0.2
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_finishing",
+  "pes_ability": "Finishing",
+  "weights": {
+   "Finishing": 0.8,
+   "Composure": 0.2
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_heading",
+  "pes_ability": "Heading",
+  "weights": {
+   "Heading": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_place_kicking",
+  "pes_ability": "Place Kicking",
+  "weights": {
+   "Free Kick Taking": 0.4,
+   "Penalty Taking": 0.3,
+   "Corners": 0.3
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_curl",
+  "pes_ability": "Curl",
+  "weights": {
+   "Technique": 0.5,
+   "Free Kick Taking": 0.25,
+   "Crossing": 0.25
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_speed",
+  "pes_ability": "Speed",
+  "weights": {
+   "Pace": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_acceleration",
+  "pes_ability": "Acceleration",
+  "weights": {
+   "Acceleration": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_kicking_power",
+  "pes_ability": "Kicking Power",
+  "weights": {
+   "Long Shots": 0.6,
+   "Strength": 0.4
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_jump",
+  "pes_ability": "Jump",
+  "weights": {
+   "Jumping Reach": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_physical_contact",
+  "pes_ability": "Physical Contact",
+  "weights": {
+   "Strength": 0.8,
+   "Bravery": 0.2
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_balance",
+  "pes_ability": "Balance",
+  "weights": {
+   "Balance": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_stamina",
+  "pes_ability": "Stamina",
+  "weights": {
+   "Stamina": 0.8,
+   "Natural Fitness": 0.2
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_defensive_awareness",
+  "pes_ability": "Defensive Awareness",
+  "weights": {
+   "Positioning": 0.5,
+   "Marking": 0.3,
+   "Anticipation": 0.2
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_ball_winning",
+  "pes_ability": "Ball Winning",
+  "weights": {
+   "Tackling": 0.7,
+   "Aggression": 0.15,
+   "Work Rate": 0.15
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_aggression",
+  "pes_ability": "Aggression",
+  "weights": {
+   "Aggression": 0.5,
+   "Work Rate": 0.25,
+   "Determination": 0.25
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_gk_awareness",
+  "pes_ability": "GK Awareness",
+  "weights": {
+   "Command Of Area": 0.4,
+   "One On Ones": 0.3,
+   "Communication": 0.3
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_gk_catching",
+  "pes_ability": "GK Catching",
+  "weights": {
+   "Handling": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_gk_clearing",
+  "pes_ability": "GK Clearing",
+  "weights": {
+   "Handling": 0.3,
+   "Aerial Reach": 0.4,
+   "Kicking": 0.3
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_gk_reflexes",
+  "pes_ability": "GK Reflexes",
+  "weights": {
+   "Reflexes": 1.0
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ },
+ {
+  "id": "rate_gk_reach",
+  "pes_ability": "GK Reach",
+  "weights": {
+   "Aerial Reach": 0.6,
+   "One On Ones": 0.4
+  },
+  "formula": "40 + (sum(w*fm)-5)/95*59, clamp 40..99",
+  "verified": "design rule: weights sum to 1.0; PES = 40 + (FM_internal-5)/95*59 so FM 20->99, FM 10->65, FM 1->40. Checked by tools/preflight.py (attribute names must exist in fm_attributes)"
+ }
+]

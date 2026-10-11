@@ -1,0 +1,74 @@
+[
+ {
+  "id": "banner",
+  "where": "spfl overlay",
+  "text": "FM24 MATCHDAY  {home} v {away}  ({comp}, {date})",
+  "verified": ""
+ },
+ {
+  "id": "pick_teams",
+  "where": "spfl overlay",
+  "text": "Pick {home_spfl} ({home_league}) as home and {away_spfl} ({away_league}) as away in Match > Local Match. FM24 squads and ratings are loaded.",
+  "verified": ""
+ },
+ {
+  "id": "no_request",
+  "where": "spfl overlay",
+  "text": "Matchday Bridge: no FM24 match waiting. Start it from FM24's team news screen.",
+  "verified": ""
+ },
+ {
+  "id": "fm_missing",
+  "where": "bridge + spfl overlay",
+  "text": "Football Manager 2024 is not installed (looked in every Steam library). Matchday Bridge needs it.",
+  "verified": ""
+ },
+ {
+  "id": "spfl_missing",
+  "where": "bridge",
+  "text": "SP Football Life 2026 is not installed. Matchday Bridge needs it.",
+  "verified": ""
+ },
+ {
+  "id": "result_saved",
+  "where": "spfl overlay",
+  "text": "Final score saved for FM24: {home} {hg}-{ag} {away}",
+  "verified": ""
+ },
+ {
+  "id": "prompt",
+  "where": "bridge window",
+  "text": "Match day: {home} v {away}\nPlay this match in SP Football Life 2026, or let FM24 simulate it?",
+  "verified": ""
+ },
+ {
+  "where": "bridge window",
+  "verified": "",
+  "id": "writeback_wait",
+  "text": "Full time in SPFL26: {home} {hg}-{ag} {away}.\nFM24 plays its own match out in the background; at FM's full time this score and its scorers go in and FM24 moves on to save them. Leave FM24's window open (not minimized)."
+ },
+ {
+  "where": "bridge window",
+  "verified": "",
+  "id": "writeback_done",
+  "text": "Saved in FM24: {home} {hg}-{ag} {away}."
+ },
+ {
+  "where": "bridge window",
+  "verified": "",
+  "id": "spfl_restart",
+  "text": "Restarting SP Football Life 2026 so it loads this match's squads..."
+ },
+ {
+  "id": "drive_busy",
+  "where": "bridge window",
+  "text": "SPFL26 is starting. Matchday Bridge walks its menus for you: Local Match, {home} v {away}, controller 1 on {you}. It works in the background; you don't need to touch the game yet.",
+  "verified": ""
+ },
+ {
+  "id": "drive_ready",
+  "where": "bridge window",
+  "text": "SPFL26 is on the pre-match screen. Choose kits and stadium, then Kick Off. You play {you} ({side}) with controller 1. FM24 is simulating its own match in the background meanwhile.",
+  "verified": ""
+ }
+]

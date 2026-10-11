@@ -1,0 +1,119 @@
+[
+ {
+  "id": "pes_eb_owner",
+  "struct": "EDIT_BLOCK",
+  "field": "owner_global",
+  "offset": "0x143705e10",
+  "type": "ptr",
+  "meaning": "[global]+0x48 = edit block (no ASLR)",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers; also Matozanato layout.json"
+ },
+ {
+  "id": "pes_eb_team_count",
+  "struct": "EDIT_BLOCK",
+  "field": "team_count",
+  "offset": "0xd0bcec",
+  "type": "u32",
+  "meaning": "teams in use (749)",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers"
+ },
+ {
+  "id": "pes_eb_player_count",
+  "struct": "EDIT_BLOCK",
+  "field": "player_count",
+  "offset": "0xd0bce8",
+  "type": "u32",
+  "meaning": "players in use; grew 29492->29524 with our 32 new players",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers"
+ },
+ {
+  "id": "pes_eb_teams",
+  "struct": "EDIT_BLOCK",
+  "field": "teams",
+  "offset": "0xadf4bc",
+  "type": "TEAM_REC[stride 0x690]",
+  "meaning": "team records",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers"
+ },
+ {
+  "id": "pes_tr_id",
+  "struct": "TEAM_REC",
+  "field": "id_encoded",
+  "offset": "0x0",
+  "type": "u32",
+  "meaning": "team id = (v>>14)&0x1ffff",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers; sider decode_team_id"
+ },
+ {
+  "id": "pes_tr_name",
+  "struct": "TEAM_REC",
+  "field": "name",
+  "offset": "0x4",
+  "type": "char[0x46]",
+  "meaning": "team name",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers; 'Oldham Athletic' after Team.bin rename"
+ },
+ {
+  "id": "pes_tr_abbr",
+  "struct": "TEAM_REC",
+  "field": "abbr",
+  "offset": "0x4a",
+  "type": "char[4]",
+  "meaning": "3-letter scoreboard name",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers; 'ZLG' shown on scoreboard pes20.png"
+ },
+ {
+  "id": "pes_tr_roster",
+  "struct": "TEAM_REC",
+  "field": "roster",
+  "offset": "0x150",
+  "type": "{u32 player, u16 last_marker, u16 0}[40]",
+  "meaning": "squad in order; first 11 start; marker 0xffff on the last player and every empty slot",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers"
+ },
+ {
+  "id": "pes_tr_captain",
+  "struct": "TEAM_REC",
+  "field": "captain_index",
+  "offset": "0x294",
+  "type": "u16",
+  "meaning": "roster index (assumed captain); must be < squad size",
+  "verified": ""
+ },
+ {
+  "id": "pes_tr_shirts",
+  "struct": "TEAM_REC",
+  "field": "shirts",
+  "offset": "0x29a",
+  "type": "u16[40]",
+  "meaning": "shirt numbers in roster order",
+  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers; Atlanta 42,1,4,5,6,55... = PlayerAssignment shirts"
+ },
+ {
+  "id": "pes_lp_stride",
+  "struct": "LIVE_PLAYER",
+  "field": "stride",
+  "offset": "0x17c",
+  "type": "size",
+  "meaning": "live player records from the edit block start (+0x0), player_count of them",
+  "verified": "SPFL26 26.2.0.3 live 2026-10-10: 29492 records; id equals Player.bin +0x08 for all; names equal Player.bin +0x44 slots byte for byte (research/job_livemap.py)"
+ },
+ {
+  "id": "pes_lp_id",
+  "struct": "LIVE_PLAYER",
+  "field": "player_id",
+  "offset": "0x30",
+  "type": "u32",
+  "meaning": "player id (Player.bin +0x08)",
+  "verified": "SPFL26 26.2.0.3 live 2026-10-10: 29492 records; id equals Player.bin +0x08 for all; names equal Player.bin +0x44 slots byte for byte (research/job_livemap.py)"
+ },
+ {
+  "id": "pes_lp_names",
+  "struct": "LIVE_PLAYER",
+  "field": "names",
+  "offset": "0x38",
+  "type": "4 x 0x3d utf8",
+  "meaning": "the four Player.bin name slots (+0x44 there)",
+  "verified": "SPFL26 26.2.0.3 live 2026-10-10: 29492 records; id equals Player.bin +0x08 for all; names equal Player.bin +0x44 slots byte for byte (research/job_livemap.py)"
+ }
+]

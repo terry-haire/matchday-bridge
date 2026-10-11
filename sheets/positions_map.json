@@ -1,0 +1,137 @@
+[
+ {
+  "id": "fmpos_gk",
+  "fm_slot": 0,
+  "fm_code": "GK",
+  "pes_position": "GK",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_sw",
+  "fm_slot": 1,
+  "fm_code": "SW",
+  "pes_position": "CB",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_dl",
+  "fm_slot": 2,
+  "fm_code": "DL",
+  "pes_position": "LB",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_dc",
+  "fm_slot": 3,
+  "fm_code": "DC",
+  "pes_position": "CB",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_dr",
+  "fm_slot": 4,
+  "fm_code": "DR",
+  "pes_position": "RB",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_dm",
+  "fm_slot": 5,
+  "fm_code": "DM",
+  "pes_position": "DMF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_ml",
+  "fm_slot": 6,
+  "fm_code": "ML",
+  "pes_position": "LMF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_mc",
+  "fm_slot": 7,
+  "fm_code": "MC",
+  "pes_position": "CMF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_mr",
+  "fm_slot": 8,
+  "fm_code": "MR",
+  "pes_position": "RMF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_aml",
+  "fm_slot": 9,
+  "fm_code": "AML",
+  "pes_position": "LWF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_amc",
+  "fm_slot": 10,
+  "fm_code": "AMC",
+  "pes_position": "AMF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_amr",
+  "fm_slot": 11,
+  "fm_code": "AMR",
+  "pes_position": "RWF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_st",
+  "fm_slot": 12,
+  "fm_code": "ST",
+  "pes_position": "CF",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_wbl",
+  "fm_slot": 13,
+  "fm_code": "WBL",
+  "pes_position": "LB",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ },
+ {
+  "id": "fmpos_wbr",
+  "fm_slot": 14,
+  "fm_code": "WBR",
+  "pes_position": "RB",
+  "natural_at": 18,
+  "can_play_at": 13,
+  "verified": "Oldham 18-man squad 10 Jul 2032 (lab save): natural slots match FM team sheet roles - Seimen GK s0, Alberto/Illa DC s3, Torres DR s4, Vieira/Casartelli/Agoume MC s7, Raicevic AML s9, Santos/Chukalov AMC s10, Ribeiro ST s12, Cucurella WBL s13"
+ }
+]

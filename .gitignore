@@ -1,0 +1,35 @@
+research/dumps/
+dist/
+build/
+__pycache__/
+*.pyc
+*.log
+.venv/
+release/
+research/jobs/
+research/shots/
+research/*.bin
+research/*.pkl
+research/*.json
+research/jobs2/
+
+spfl/xinput/*.lib
+spfl/xinput/*.exp
+research/test_root/
+research/sider7_sider.cpp
+research/my_last_input.txt
+research/prev_fg.txt
+research/fm_rtti.txt
+research/spfl_*.json
+research/ft*.json
+research/mp_stats_dump.json
+research/events_census.json
+research/stats_census.json
+research/scorer_refs.json
+research/goal_diff.json
+
+# not for publishing: copies of third-party files, game-data dumps and logs, FM24 save data
+research/*.txt
+research/ref_*.py
+research/matchday_sample.json
+Clipboard Text.txt
