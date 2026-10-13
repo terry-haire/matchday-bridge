@@ -1,5 +1,7 @@
 # Matchday Bridge — Football Manager 2024 × SP Football Life 2026
 
+[Watch the video](https://www.youtube.com/watch?v=dPkCeqTkNk8)
+
 Manage your club in Football Manager 2024 as normal. On match day, play the match yourself in
 SP Football Life 2026 with both clubs' real FM24 match squads, and the score goes back into your FM24 save.
 
