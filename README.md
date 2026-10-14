@@ -1,5 +1,8 @@
 # Matchday Bridge — Football Manager 2024 × SP Football Life 2026
 
+
+<img width="505" height="476" alt="image" src="https://github.com/user-attachments/assets/64945082-1600-4977-b713-8ff293f28781" />
+
 [Watch the video](https://www.youtube.com/watch?v=dPkCeqTkNk8)
 
 Manage your club in Football Manager 2024 as normal. On match day, play the match yourself in
