@@ -8,7 +8,7 @@
  {
   "id": "pick_teams",
   "where": "spfl overlay",
-  "text": "Pick {home_spfl} ({home_league}) as home and {away_spfl} ({away_league}) as away in Match > Local Match. FM24 squads and ratings are loaded.",
+  "text": "Pick {home_spfl}{home_where} as home and {away_spfl}{away_where} as away in Match > Local Match. FM24 squads and ratings are loaded.",
   "verified": ""
  },
  {
@@ -24,9 +24,9 @@
   "verified": ""
  },
  {
-  "id": "spfl_missing",
+  "id": "game_missing",
   "where": "bridge",
-  "text": "SP Football Life 2026 is not installed. Matchday Bridge needs it.",
+  "text": "Neither eFootball PES 2021 (free on Steam as PES 2021 LITE) nor SP Football Life 2026 is installed. Matchday Bridge needs one of them.",
   "verified": ""
  },
  {
@@ -38,14 +38,14 @@
  {
   "id": "prompt",
   "where": "bridge window",
-  "text": "Match day: {home} v {away}\nPlay this match in SP Football Life 2026, or let FM24 simulate it?",
+  "text": "Match day: {home} v {away}\nPlay this match yourself in {game}, or let FM24 simulate it?",
   "verified": ""
  },
  {
   "where": "bridge window",
   "verified": "",
   "id": "writeback_wait",
-  "text": "Full time in SPFL26: {home} {hg}-{ag} {away}.\nFM24 plays its own match out in the background; at FM's full time this score and its scorers go in and FM24 moves on to save them. Leave FM24's window open (not minimized)."
+  "text": "Full time in {game}: {home} {hg}-{ag} {away}.\nFM24 plays its own match out in the background; at FM's full time this score and its scorers go in and FM24 moves on to save them. Leave FM24's window open (not minimized)."
  },
  {
   "where": "bridge window",
@@ -56,19 +56,19 @@
  {
   "where": "bridge window",
   "verified": "",
-  "id": "spfl_restart",
-  "text": "Restarting SP Football Life 2026 so it loads this match's squads..."
+  "id": "game_restart",
+  "text": "Restarting {game} so it loads this match's squads..."
  },
  {
   "id": "drive_busy",
   "where": "bridge window",
-  "text": "SPFL26 is starting. Matchday Bridge walks its menus for you: Local Match, {home} v {away}, controller 1 on {you}. It works in the background; you don't need to touch the game yet.",
+  "text": "{game} is starting. Matchday Bridge walks its menus for you: Local Match, {home} v {away}, controller 1 on {you}. It works in the background; you don't need to touch the game yet.",
   "verified": ""
  },
  {
   "id": "drive_ready",
   "where": "bridge window",
-  "text": "SPFL26 is on the pre-match screen. Choose kits and stadium, then Kick Off. You play {you} ({side}) with controller 1. FM24 is simulating its own match in the background meanwhile.",
+  "text": "{game} is on the pre-match screen. Choose kits (and stadium), then Kick Off. You play {you} ({side}) with controller 1. FM24 is simulating its own match in the background meanwhile.",
   "verified": ""
  }
 ]

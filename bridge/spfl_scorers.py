@@ -1,6 +1,6 @@
-"""Reads who scored from SP Football Life 2026's goal caption ("47 Ryan Harris / GOAL 1", bottom left).
+"""Reads who scored from the game's goal caption ("47 Ryan Harris / GOAL 1", bottom left; PES 2021 and SPFL26).
 
-SPFL26 keeps no player-keyed goal list that could be found in memory, but after every goal it shows the
+The game keeps no player-keyed goal list that could be found in memory, but after every goal it shows the
 scorer's shirt number and name for a few seconds. The game window is captured with Windows Graphics Capture
 (works while other windows cover it; falls back to the screen pixels), the caption is read with the Windows OCR
 engine, then matched to the squad the bridge built for this match: a unique name starting with the letters read
@@ -21,12 +21,52 @@ import threading
 import time
 import unicodedata
 
-TITLE = "SP Football Life 2026"
-CAPTION = (40, 520, 560, 640)          # caption area in a 1280x720 frame (scaled to the real window size)
+GAME = ["FL_2026.exe"]                 # the game whose window is read (use_game; the bridge sets it per match)
+# Caption area per game in a 1280x720 frame (scaled to the real window size): SPFL26 (its scoreboard mod) shows
+# "47 Ryan Harris / GOAL 1" bottom left; PES 2021 shows "7 Arlo Brightwater / Today's Goals 1" under its scoreboard.
+CAPTIONS = {"FL_2026.exe": (40, 520, 560, 640), "PES2021.exe": (40, 88, 420, 150)}
+CAPTION = CAPTIONS["FL_2026.exe"]
 user32 = ctypes.windll.user32
 _engine = None
 _ocr_lock = threading.Lock()
 _wgc = None
+_found = [0, 0]                        # last (window, process id) found by game_window
+
+
+def use_game(exe: str):
+    GAME[0] = exe
+
+
+def game_window(exe: str | None = None) -> int:
+    """The game's main window: the largest visible top-level window of its process (titles differ per game and
+    edition, e.g. "eFootball PES 2021 LITE")."""
+    from procmem import find_pid
+    exe = exe or GAME[0]
+    pid = find_pid(exe)
+    if not pid:
+        return 0
+    h, owner = _found
+    if owner == pid and h and user32.IsWindow(h) and user32.IsWindowVisible(h):
+        p = wt.DWORD()
+        user32.GetWindowThreadProcessId(h, ctypes.byref(p))
+        if p.value == pid:
+            return h
+    best = [0, 0]
+
+    @ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)
+    def each(w, _):
+        p = wt.DWORD()
+        user32.GetWindowThreadProcessId(w, ctypes.byref(p))
+        if p.value == pid and user32.IsWindowVisible(w) and not user32.GetWindow(w, 4):   # GW_OWNER: top level
+            r = wt.RECT()
+            user32.GetClientRect(w, ctypes.byref(r))
+            if r.right * r.bottom > best[1]:
+                best[:] = [w, r.right * r.bottom]
+        return True
+
+    user32.EnumWindows(each, 0)
+    _found[:] = [best[0], pid]
+    return best[0]
 
 
 def norm(s: str) -> str:
@@ -129,7 +169,7 @@ class WindowFrames:
 
 def _window():
     user32.SetThreadDpiAwarenessContext(ctypes.c_void_p(-4))      # physical pixels on this thread
-    h = user32.FindWindowW(None, TITLE)
+    h = game_window()
     return h if h and not user32.IsIconic(h) else 0
 
 
@@ -147,17 +187,18 @@ def screen_image(h: int):
 
 
 def _grab_caption(frames: WindowFrames | None = None):
-    """Pixels of the caption area of the SPFL26 window (captured, or from the screen if capture is
+    """Pixels of the caption area of the game window (captured, or from the screen if capture is
     unavailable), upscaled for OCR; None if the window is missing/minimized."""
     from PIL import ImageGrab
     h = _window()
     if not h:
         return None
+    cap = CAPTIONS.get(GAME[0], CAPTION)
     img = frames.client_image() if frames else None
     if img is not None and img.width >= 320:
         k = img.width / 1280
-        img = img.crop((int(CAPTION[0] * k), int(CAPTION[1] * img.height / 720), int(CAPTION[2] * k),
-                        int(CAPTION[3] * img.height / 720)))
+        img = img.crop((int(cap[0] * k), int(cap[1] * img.height / 720), int(cap[2] * k),
+                        int(cap[3] * img.height / 720)))
     else:
         r = wt.RECT()
         user32.GetClientRect(h, ctypes.byref(r))
@@ -167,8 +208,8 @@ def _grab_caption(frames: WindowFrames | None = None):
         if w < 320 or hh < 180:
             return None
         kx, ky = w / 1280, hh / 720
-        box = (pt.x + int(CAPTION[0] * kx), pt.y + int(CAPTION[1] * ky), pt.x + int(CAPTION[2] * kx),
-               pt.y + int(CAPTION[3] * ky))
+        box = (pt.x + int(cap[0] * kx), pt.y + int(cap[1] * ky), pt.x + int(cap[2] * kx),
+               pt.y + int(cap[3] * ky))
         img = ImageGrab.grab(bbox=box, all_screens=True)
     if img.width < 1000:                 # OCR wants ~30 px letters; the caption is ~15 px at 720p
         img = img.resize((img.width * 2, img.height * 2))
@@ -242,7 +283,7 @@ class ScorerReader:
             m = re.match(r"\s*(\d{1,2})\b\s*(.*)", t)
             number, rest = (int(m.group(1)), m.group(2)) if m else (None, t)
             c = norm(rest)
-            if not c or c in self.team_names or c.startswith("goal"):
+            if not c or c in self.team_names or c.startswith(("goal", "todaysgoals")):
                 continue
             if len(c) >= 4:
                 hit = difflib.get_close_matches(c, list(names), n=1, cutoff=0.8)

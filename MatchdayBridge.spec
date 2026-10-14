@@ -5,7 +5,7 @@ import importlib.util
 import os
 
 # windows-capture's native Windows Graphics Capture core only (its Python wrapper pulls in OpenCV);
-# spfl_scorers loads it from wgc/ to read SPFL26's goal captions while other windows cover the game.
+# spfl_scorers loads it from wgc/ to read the game's goal captions while other windows cover the game.
 _wc = importlib.util.find_spec("windows_capture")      # located without importing it (that would import cv2)
 WGC = glob.glob(os.path.join(_wc.submodule_search_locations[0], "windows_capture*.pyd")) if _wc else []
 if not WGC:
@@ -17,7 +17,7 @@ a = Analysis(
     datas=[("sheets/*.json", "sheets"), ("spfl/modules/matchday.lua", "spfl/modules"),
            ("spfl/xinput/xinput1_3.dll", "spfl/xinput")],
     hiddenimports=["fm_reader", "fm_writer", "fm_drive", "fm_graphics", "spfl_scorers", "spfl_drive", "spfl_pad",
-                   "spfl_live", "spfl_select", "spfl_faces", "ui",
+                   "spfl_live", "spfl_select", "spfl_faces", "games", "install", "ui", "urllib.request",
                    "zstandard", "PIL.Image", "PIL.ImageGrab", "PIL.PngImagePlugin", "PIL.ImageTk", "PIL.ImageOps",
                    "PIL.ImageDraw", "PIL.ImageFont",
                    "winrt.windows.media.ocr", "winrt.windows.graphics.imaging", "winrt.windows.storage.streams",

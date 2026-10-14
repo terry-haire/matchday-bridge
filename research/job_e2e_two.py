@@ -46,6 +46,7 @@ F.to_match(until="teamtalk")
 log("FM on match 1 Pep Talk")
 root = tk.Tk()
 br = M.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 
 
 def one_match(n):
@@ -65,9 +66,9 @@ def one_match(n):
     log(f"match {n}: choice shown")
     time.sleep(2)
     snap(f"{n}_choice")
-    root.after(0, lambda: br.dialog._play())
+    root.after(0, lambda: br.dialog._play(br.games.index(br.game)))
     t = time.time()
-    while br.view.title_var.get() not in ("Your turn", "Pick the teams in SPFL26"):
+    while br.view.title_var.get() not in ("Your turn", "Pick the teams in Football Life 2026"):
         time.sleep(1)
     log(f"match {n}: SPFL26 ready in {time.time() - t:.0f}s ({br.view.title_var.get()}), live load: {br.live is not None}")
     if br.view.title_var.get() != "Your turn":

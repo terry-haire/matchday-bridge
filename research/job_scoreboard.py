@@ -19,6 +19,7 @@ import fm_writer  # noqa: E402
 import matchday_bridge as mb  # noqa: E402
 import spfl  # noqa: E402
 import win  # noqa: E402
+from games import owner_global  # noqa: E402
 from gen_structs import SPFL_EDIT_BLOCK as EB  # noqa: E402
 from procmem import Proc  # noqa: E402
 
@@ -56,7 +57,7 @@ def printable(b: bytes) -> str:
 
 
 def team_recs(p: Proc, tids):
-    owner = p.u64(EB.OWNER_GLOBAL)
+    owner = p.u64(owner_global(p)[1])
     blk = p.u64(owner + 0x48)
     n = p.u32(blk + EB.TEAM_COUNT)
     raw = p.read(blk + EB.TEAMS, n * 0x690)
@@ -93,6 +94,7 @@ ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
 spfl.set_test(match_minutes=2, extra_time=0, penalties=0)
 root = tk.Tk()
 br = mb.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 md = json.load(open(os.path.join(ROOT, "tests", "sample_matchday.json"), encoding="utf-8"))
 md = {**md, "home": {**md["home"], "name": HOME, "short": SHORT.get(HOME, HOME.split()[0]), "human": False,
                      "club_id": CLUB_IDS.get(HOME)},
@@ -106,7 +108,7 @@ state = {}
 
 def poll():
     t = br.view.title_var.get()
-    if t in ("Your turn", "Pick the teams in SPFL26") or time.time() - T0 > 600:
+    if t in ("Your turn", "Pick the teams in Football Life 2026") or time.time() - T0 > 600:
         state["title"] = t
         log(f"{t} | {br.view.body_var.get()[:100]} | {br.view.detail_var.get()[:160]}")
         log(f"loaded live: {br.live is not None}")

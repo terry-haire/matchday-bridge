@@ -27,7 +27,24 @@ def _read_val(b, p, typ, gstr):
     raise ValueError("@UTF column type %x" % typ)
 
 
+_UTF_KEY = b""
+
+
+def _utf_unscramble(data: bytes) -> bytes:
+    """CRI's table scrambling (Konami's official PES 2021 .cpk files): XOR with the low bytes of the LCG
+    m = 0x655F * 0x4115^i (mod 2^32); the key stream is the same for every table, so it is built once."""
+    global _UTF_KEY
+    import numpy as np
+    if len(_UTF_KEY) < len(data):
+        p = np.full(max(len(data), 1 << 16), 0x4115, dtype=np.uint64)
+        p[0] = 1
+        _UTF_KEY = ((np.cumprod(p) * np.uint64(0x655F)) & np.uint64(0xFF)).astype(np.uint8).tobytes()
+    return (np.frombuffer(data, np.uint8) ^ np.frombuffer(_UTF_KEY, np.uint8, len(data))).tobytes()
+
+
 def _utf_parse(data):
+    if data[:4] != b"@UTF" and _utf_unscramble(data[:4]) == b"@UTF":
+        data = _utf_unscramble(data)
     if data[:4] != b"@UTF":
         raise ValueError("not a CRI table: %r" % data[:4])
     size, = struct.unpack(">I", data[4:8])

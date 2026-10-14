@@ -23,6 +23,7 @@ import fm_writer  # noqa: E402
 import matchday_bridge as mb  # noqa: E402
 import spfl  # noqa: E402
 import win  # noqa: E402
+from games import owner_global  # noqa: E402
 from gen_structs import SPFL_EDIT_BLOCK as EB, SPFL_LIVE_PLAYER as LP  # noqa: E402
 from procmem import Proc  # noqa: E402
 
@@ -54,7 +55,7 @@ def log(s):
 def edit_teams(tids):
     p = Proc("FL_2026.exe")
     try:
-        blk = p.u64(p.u64(EB.OWNER_GLOBAL) + 0x48)
+        blk = p.u64(p.u64(owner_global(p)[1]) + 0x48)
         n = p.u32(blk + EB.TEAM_COUNT)
         raw = p.read(blk + EB.TEAMS, n * 0x690)
         out = {}
@@ -72,7 +73,7 @@ def edit_teams(tids):
 def live_names(pids):
     p = Proc("FL_2026.exe")
     try:
-        blk = p.u64(p.u64(EB.OWNER_GLOBAL) + 0x48)
+        blk = p.u64(p.u64(owner_global(p)[1]) + 0x48)
         n = p.u32(blk + EB.PLAYER_COUNT)
         raw = p.read(blk, n * LP.STRIDE)
         want, out = set(pids), {}
@@ -120,7 +121,7 @@ def setup(n, home, away):
     t = time.time()
     root.after(0, br.play)
     time.sleep(3)
-    while br.view.title_var.get() not in ("Your turn", "Pick the teams in SPFL26"):
+    while br.view.title_var.get() not in ("Your turn", "Pick the teams in Football Life 2026"):
         time.sleep(1)
         if time.time() - t > 400:
             raise TimeoutError(f"match {n}: SPFL26 not ready")
@@ -189,6 +190,7 @@ ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
 spfl.set_test(match_minutes=2, extra_time=0, penalties=0)
 root = tk.Tk()
 br = mb.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 threading.Thread(target=harness, daemon=True).start()
 root.mainloop()
 log("done")

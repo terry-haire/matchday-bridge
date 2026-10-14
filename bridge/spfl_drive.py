@@ -1,9 +1,10 @@
-"""Walks SP Football Life 2026 from its title screen to the pre-match screen of the FM24 fixture.
+"""Walks PES 2021 or SP Football Life 2026 from its title screen to the pre-match screen of the FM24 fixture.
 
 Title -> Match -> Local Match -> side select (controller 1 on the FM24 club the player manages) -> Select Team
 (both clubs: set directly through matchday.lua's list-cursor hook, see spfl_select; by scrolling to the league and
 club names with OCR when the hook is not there) -> pre-match screen (kits, stadium, Kick Off), where the player
-takes over.
+takes over. PES 2021's top menu is a grid of unlabelled icons (Match is the top-left one; the panel title names the
+highlighted icon) and its Match menu a short list (Local Match first); neither wraps round.
 
 Input goes in as controller User 1 through the bridge's XInput proxy (spfl_pad), so the game window does not
 need focus. Screens are read with Windows Graphics Capture + Windows OCR (spfl_scorers): every step waits for
@@ -20,7 +21,7 @@ import time
 import unicodedata
 
 import spfl_pad
-from spfl_scorers import TITLE, WindowFrames, ocr_words, screen_image
+from spfl_scorers import WindowFrames, game_window, ocr_words, screen_image
 
 user32 = ctypes.windll.user32
 
@@ -66,21 +67,27 @@ class BackOutError(DriveError):
 HUD = re.compile(r"\b[0-9oO]{1,3}\s*[:.]\s*[0-9oO]{2}\b")
 
 
-def in_match(lines) -> bool:
-    """SPFL26's match HUD: the clock ("0:00", OCR often reads "o:oo") and the LIVE badge."""
+def in_match(lines, height: float = 0) -> bool:
+    """The match HUD: SPFL26's clock ("0:00", OCR often reads "o:oo") with its LIVE badge; PES 2021's clock alone,
+    at the top of the frame (given its height)."""
     t = text_of(lines)
-    return bool(HUD.search(t)) and "live" in t.lower()
+    if HUD.search(t) and "live" in t.lower():
+        return True
+    return bool(height) and any(HUD.fullmatch(w[0].strip()) and w[2] < height * 0.12 for ln in lines for w in ln)
 
 
 class Driver:
     def __init__(self, plan: dict, user_side: str, status=None, log=None, shots: str | None = None,
-                 sider: str | None = None):
+                 sider: str | None = None, exe: str = "FL_2026.exe", before_teams=None):
         self.plan, self.user_side = plan, user_side
         self.status = status or (lambda s: None)
         self.log = log or (lambda s: None)
+        self.before_teams = before_teams    # called on reaching Select Team (the bridge writes the squads in)
         self.h, self.frames = 0, None
         self.cancelled = False
         self.shots = shots
+        self.exe, self.pes = exe, exe.lower() == "pes2021.exe"
+        self.height = 0
         self.club_settle = 0.0              # seconds between landing on a club and confirming it
         if sider is None:
             import install
@@ -101,7 +108,7 @@ class Driver:
     # ------------------------------------------------------------------ screen
     def window(self) -> int:
         user32.SetThreadDpiAwarenessContext(ctypes.c_void_p(-4))
-        h = user32.FindWindowW(None, TITLE)
+        h = game_window(self.exe)
         if h != self.h:
             if self.frames:
                 self.frames.stop()
@@ -122,9 +129,10 @@ class Driver:
                 if img is None or img.width < 640 or not img.getbbox():
                     img = screen_image(h) if user32.GetForegroundWindow() == h else None
                 if img is not None and img.width >= 640:
+                    self.height = img.height
                     return img
             time.sleep(0.3)
-        raise DriveError("the SPFL26 window can't be seen (minimized?)")
+        raise DriveError("the game window can't be seen (minimized?)")
 
     def read(self):
         img = self.shot()
@@ -136,16 +144,20 @@ class Driver:
         t = fold(text_of(lines))
         rules = [
             ("sider", ["sider7"]),
+            ("topdialog", ["returntotopmenu", "cancel"]),        # PES 2021: Cancel (selected) | Return
             ("pause", ["pausemenu"]),
             ("rematchmenu", ["startmatch", "returntotopmenu"]),
             ("leavedialog", ["previousscreen", "proceed"]),     # No (selected) | Yes
             ("title", ["enter", "gameversion"]),
+            ("title", ["pressanybutton"]),                       # PES 2021
             ("fulltime", ["fulltime", "topmenu"]),
             ("prematch", ["kickoff", "gameplan"]),
             ("sides", ["home", "away", "confirm", "coachmode"]),
             ("teams", ["home", "away", "confirm", "random"]),
             ("matchmenu", ["localmatch", "randommatch"]),
+            ("matchmenu", ["localmatch", "coop", "training"]),   # PES 2021, over the top menu
             ("mainmenu", ["footballlife2026"]),
+            ("mainmenu", ["featuredplayers"]),                   # PES 2021 top menu
         ]
         for name, need in rules:
             if all(fold(n) in t for n in need):
@@ -171,7 +183,7 @@ class Driver:
             elif scr in names or (leave and scr not in (leave, "unknown")):
                 return scr, lines
             time.sleep(0.25)
-        raise DriveError(f"SPFL26 stayed on the {last} screen")
+        raise DriveError(f"the game stayed on the {last} screen")
 
     def advance(self, button: str, frm: str, timeout: float = 30.0, retry: float = 2.0):
         """Press `button` (again every `retry` s: menus drop input while they animate) until `frm` is left."""
@@ -182,7 +194,7 @@ class Driver:
                 return self.wait((), retry, leave=frm)
             except DriveError:
                 continue
-        raise DriveError(f"SPFL26 did not leave the {frm} screen")
+        raise DriveError(f"the game did not leave the {frm} screen")
 
     def check(self):
         if self.cancelled:
@@ -245,11 +257,16 @@ class Driver:
         raise DriveError(f"{target!r} is not in the {side} {kind} list")
 
     def pick_teams(self):
+        if self.before_teams:
+            try:
+                self.before_teams()
+            except Exception as e:  # noqa: BLE001 - the squads from the LiveCPK root are still there
+                self.log(f"spfl squads not written before Select Team: {e}")
         self._wait_rosters()
         hook = None
         try:
             from spfl_select import SelectHook
-            hook = SelectHook(self.sider)
+            hook = SelectHook(self.sider, self.exe)
         except Exception as e:  # noqa: BLE001 - older matchday.lua or no access: scroll the lists by OCR
             self.log(f"spfl Select Team hook not available ({e}): scrolling the lists")
         try:
@@ -285,7 +302,7 @@ class Driver:
         end = time.time() + timeout
         while True:
             try:
-                have = live_rosters(set(want))
+                have = live_rosters(set(want), self.exe)
             except OSError as e:
                 self.log(f"spfl rosters not readable ({e})")
                 return
@@ -306,14 +323,15 @@ class Driver:
         try:
             t0 = time.time()
             w = self._column_widget(hook)
-            if hook.club_mode(w):
-                raise RuntimeError("the column is in its club list already")
             league, club = hook.find(w, p["spfl_team"])
-            self._set_cursor(hook, w, league, lambda: hook.league_cursor(w), len(hook.leagues(w)))
-            self.press("A")
-            if not hook.wait(lambda: hook.club_mode(w), 3.0):
-                raise RuntimeError("the league was not confirmed")
-            stage = "league"
+            if not hook.club_mode(w):
+                self._set_cursor(hook, w, league, lambda: hook.league_cursor(w), len(hook.leagues(w)))
+                self.press("A")
+                if not hook.wait(lambda: hook.club_mode(w), 3.0):
+                    raise RuntimeError("the league was not confirmed")
+            elif len(hook.leagues(w)) != 1:
+                raise RuntimeError("the column is in its club list already")
+            stage = "league"                     # PES 2021 LITE: its one list of clubs starts confirmed
             n = len(hook.clubs(hook.leagues(w)[league]))
             self._set_cursor(hook, w, club, lambda: hook.club_cursor(w, league), n)
             landed = time.time()
@@ -334,7 +352,8 @@ class Driver:
             return stage
 
     def _column_widget(self, hook) -> int:
-        """The active column's list widget: the one whose league cursor moves on DOWN (UP at the list's end)."""
+        """The active column's list widget: the one whose league cursor moves on DOWN (UP at the list's end), or whose
+        club cursor does when its only list starts confirmed (PES 2021 LITE)."""
         end = time.time() + 5
         while time.time() < end:
             for button in ("DOWN", "UP"):
@@ -342,10 +361,13 @@ class Driver:
                 self.press(button)
                 if hook.wait(lambda: hook.moves() != n0, 0.5):
                     w, cell = hook.last_list()
-                    if cell - w != 0x118:
-                        raise RuntimeError("the cursor that moved is not a league list's")
-                    return w
-        raise RuntimeError("the league list did not move")
+                    if cell - w == 0x118:
+                        return w
+                    from spfl_select import L_CURSOR
+                    if hook.club_mode(w) and any(cell == lg + L_CURSOR for lg in hook.leagues(w)):
+                        return w
+                    raise RuntimeError("the cursor that moved is not a Select Team list's")
+        raise RuntimeError("the Select Team list did not move")
 
     def _set_cursor(self, hook, w: int, target: int, read, n: int):
         """Armed hook + one DOWN (UP on the last entry): the game stores `target` as the new cursor. The cursor always
@@ -367,11 +389,36 @@ class Driver:
         finally:
             hook.disarm()
 
+    # ------------------------------------------------------------------ PES 2021 menus
+    def _pes_match_icon(self):
+        """Top menu: Match is the top-left icon (the grid does not wrap); its panel reads "Kick Off / Face off
+        against ... in various match types" ("Welcome!" on the very first start)."""
+        for _ in range(3):
+            self.press("UP*2,LEFT*4", gap=0.12)
+            time.sleep(0.6)
+            t = fold(text_of(self.read()[1]))
+            if fold("variousmatchtypes") in t or fold("welcome") in t:
+                return
+        raise DriveError("PES 2021's Match icon could not be found on the top menu")
+
+    def _pes_local_match(self):
+        """Match menu: Local Match is the first of three entries (no wrap); the highlighted one is drawn white."""
+        for _ in range(3):
+            self.press("UP*3", gap=0.12)
+            time.sleep(0.5)
+            img = self.shot()
+            w, h = img.width, img.height
+            px = img.crop((int(w * 0.10), int(h * 0.415), int(w * 0.26), int(h * 0.455))).convert("L").resize((1, 1))
+            if px.getpixel((0, 0)) > 150:
+                return
+        raise DriveError("PES 2021's Local Match entry could not be highlighted")
+
     # ------------------------------------------------------------------ the whole walk
     def back_out(self, timeout: float = 60.0):
         """A game that was already running can be on any menu: back out to side select (or the main menu, match menu
-        or title screen) first. Full time: Top Menu; anything else: B (Return)."""
-        self.status("Back to SPFL26's main menu")
+        or title screen) first. Full time: Top Menu; PES 2021's pause menu: Top Menu too (its last entry); anything
+        else: B (Return)."""
+        self.status("Back to the game's main menu")
         end = time.time() + timeout
         unknown_since = None
         while time.time() < end:
@@ -384,18 +431,26 @@ class Driver:
                 if unknown_since is None:
                     unknown_since = time.time()
                     self.log(f"spfl unknown screen reads: {text_of(lines).replace(chr(10), ' | ')[:160]!r}")
-                if in_match(lines):
-                    raise BackOutError("SPFL26 is in the middle of a match")
+                if in_match(lines, self.height if self.pes else 0):
+                    if not self.pes:
+                        raise BackOutError("the game is in the middle of a match")
+                    self.press("START")                  # PES 2021: pause, then Top Menu (below)
+                    time.sleep(1.5)
+                    continue
                 if time.time() - unknown_since > 20:     # not a loading screen: somewhere B does not get out of
-                    raise BackOutError("SPFL26 is on a screen the bridge can't back out of")
+                    raise BackOutError("the game is on a screen the bridge can't back out of")
             else:
                 unknown_since = None
             if scr == "sider":
                 self.press("LT+RT")
-            elif scr == "leavedialog":                  # "...settings will be lost. Proceed?" -> Yes
+            elif scr in ("leavedialog", "topdialog"):   # "...settings will be lost. Proceed?" -> Yes; PES -> Return
                 self.press("RIGHT", gap=0.15)
-                time.sleep(0.3)
+                time.sleep(0.4)
                 self.press("A")
+            elif scr in ("fulltime", "pause") and self.pes:
+                self.press("RIGHT*9", gap=0.12)         # PES 2021: Top Menu is the last entry (no wrap)
+                time.sleep(0.4)
+                self.press("A")                         # -> "Return to Top Menu?" (topdialog)
             elif scr == "fulltime":
                 self.press("RIGHT*2", gap=0.15)         # Rematch / Select Team / Top Menu
                 time.sleep(0.3)
@@ -405,7 +460,7 @@ class Driver:
             else:
                 self.press("B")
             time.sleep(0.5 if scr == "teams" else 1.5)  # Select Team steps back one list per B, same screen
-        raise BackOutError("could not get SPFL26 back to its main menu")
+        raise BackOutError("could not get the game back to its main menu")
 
     def run(self, start_timeout: float = 150.0, from_anywhere: bool = False) -> None:
         """Raises DriveError when the player has to take over (the reason is in the message)."""
@@ -416,12 +471,12 @@ class Driver:
                         os.remove(os.path.join(self.shots, n))
                     except OSError:
                         pass
-        self.status("Waiting for SP Football Life 2026 to start")
+        self.status("Waiting for the game to start")
         end = time.time() + start_timeout
         while not self.window():
             self.check()
             if time.time() > end:
-                raise DriveError("SP Football Life 2026 did not open a window")
+                raise DriveError("the game did not open a window")
             time.sleep(0.5)
         spfl_pad.release()
         if not spfl_pad.polled(20):
@@ -437,9 +492,13 @@ class Driver:
                 self.advance("A", "title", 60)
             elif scr == "mainmenu":
                 self.status("Main menu > Match")
+                if self.pes:
+                    self._pes_match_icon()
                 self.advance("A", "mainmenu")
             elif scr == "matchmenu":
                 self.status("Match > Local Match")
+                if self.pes:
+                    self._pes_local_match()
                 self.advance("A", "matchmenu")
             elif scr == "sides":
                 if not sides_done:
@@ -463,11 +522,11 @@ class Driver:
                 time.sleep(0.5)
             elif scr == "prematch":
                 if not teams_done:
-                    raise DriveError("SPFL26 went to a match before the teams were picked")
+                    raise DriveError("the game went to a match before the teams were picked")
                 self.status("Ready")
                 self.keep("3_prematch")
                 return
-        raise DriveError("SPFL26 did not reach the pre-match screen")
+        raise DriveError("the game did not reach the pre-match screen")
 
     def close(self):
         spfl_pad.release()

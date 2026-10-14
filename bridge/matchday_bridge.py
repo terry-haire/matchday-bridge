@@ -1,9 +1,10 @@
-"""Matchday Bridge: FM24 career -> play your club's matches in SP Football Life 2026.
+"""Matchday Bridge: FM24 career -> play your club's matches in eFootball PES 2021 or SP Football Life 2026.
 
-Watches Football Manager 2024. When your club reaches match day (team news), it asks:
-"Play in SPFL26 or let FM sim?". Play builds both FM24 match squads into SPFL26 (ratings from FM24
-attributes; clubs SPFL26 lacks get a spare slot), restarts SPFL26, walks its menus to the pre-match screen
-of the fixture (controller 1 on your club), and writes the SPFL26 result and scorers back into FM24.
+Watches Football Manager 2024. When your club reaches match day (team news), it asks where to play: PES 2021,
+Football Life 2026 (each installed one gets a button) or let FM sim. Play builds both FM24 match squads into
+that game (ratings from FM24 attributes; clubs the game can't pick play in a spare slot under their FM24 name and
+crest), loads them into the running game or (re)starts it, walks its menus to the pre-match screen of the
+fixture (controller 1 on your club), and writes the result and scorers back into FM24.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ import tkinter as tk
 
 import install
 from fm_writer import fm_minute
+from games import find_games
 from spfl_build import MatchBuilder, request_lines
 from spfl_db import PesDb
 from ui import View
@@ -68,7 +70,7 @@ def pids_of(exe: str) -> list[int]:
 
 
 def stop_processes(exes) -> None:
-    """SPFL26 only reads its database at start-up; sider.exe sometimes outlives the game, so stop both by PID."""
+    """The game only reads its database at start-up; sider.exe sometimes outlives it, so stop both by PID."""
     for exe in exes:
         for pid in pids_of(exe):
             subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, creationflags=0x08000000)
@@ -87,7 +89,9 @@ class Bridge:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.fm_dir = install.find_fm24()
-        self.spfl_dir = install.find_spfl26()
+        self.games = find_games()                   # PES 2021 first
+        self.game = self.games[0] if self.games else None   # the game of the current match day
+        self.setup_done = threading.Event()
         self.reader = None
         self.prompted_for = None
         self.busy = False
@@ -100,35 +104,55 @@ class Bridge:
         from fm_drive import FmUi
         self.fm_ui = FmUi()
         self.fm_ui.enable(True)             # a previous run may have quit with its question open over FM24
-        self.view = View(root, APP, lambda: self.choose(True), lambda: self.choose(False))
+        self.view = View(root, APP, [g.short for g in self.games], self.choose, lambda: self.choose(None))
         self.view.footer(f"Log  {LOG}")
-        root.bind("<Return>", lambda e: self.choose(True) if self.view.play_btn.enabled else None)
+        root.bind("<Return>", lambda e: self.choose(0) if self.view.play_btn and self.view.play_btn.enabled else None)
         if not self.fm_dir:
             self.view.status("FM24 not found", "error")
             self.view.idle("Football Manager 2024 not found")
             self.view.message("Football Manager 2024 not found", TEXT["fm_missing"])
             return
-        if not self.spfl_dir:
-            self.view.status("SPFL26 not found", "error")
-            self.view.idle("SP Football Life 2026 not found")
-            self.view.message("SP Football Life 2026 not found", TEXT["spfl_missing"])
+        if not self.games:
+            self.view.status("No game found", "error")
+            self.view.idle("PES 2021 / Football Life 2026 not found")
+            self.view.message("No game to play in", TEXT["game_missing"])
             return
-        detail = ""
-        try:
-            detail = "; ".join(install.install_spfl(self.spfl_dir))
-        except PermissionError:
-            detail = "Run Matchday Bridge as administrator once so it can set up SPFL26's Sider folder."
-        log(detail)
-        self.waiting_view(detail)
-        threading.Thread(target=self._warm_faces, daemon=True).start()
+        log("games: " + ", ".join(f"{g.name} ({g.dir})" for g in self.games))
+        self.waiting_view()
+        threading.Thread(target=self._setup, daemon=True).start()
         threading.Thread(target=self.watch, daemon=True).start()
 
-    def _warm_faces(self):
+    def _setup(self) -> list[str]:
+        """Each game's Sider gets the module (PES 2021 first gets Sider itself, downloaded once); then the faces
+        tables are read ahead. Problems show under the waiting message and again when that game is picked."""
+        problems = []
         try:
-            from spfl_faces import real_face_ids
-            log(f"SPFL26 players with a real face: {len(real_face_ids(self.spfl_dir))}")
-        except Exception as e:  # noqa: BLE001 - read again (and logged) when a match is built
-            log(f"SPFL26 real faces not read yet ({e})")
+            for g in self.games:
+                try:
+                    done = install.install_pes2021(g.dir) if g.key == "pes2021" else install.install_spfl(g.dir)
+                    log(f"{g.short}: " + "; ".join(done))
+                except PermissionError as e:
+                    if ctypes.windll.shell32.IsUserAnAdmin():
+                        problems.append(f"{g.short} could not be set up ({e}). Close {g.short} and start Matchday "
+                                        "Bridge again.")
+                    else:
+                        problems.append(f"Run Matchday Bridge as administrator once so it can set up {g.short}'s "
+                                        "Sider folder.")
+                except Exception as e:  # noqa: BLE001 - e.g. no internet for the Sider download: tried again on play
+                    problems.append(f"{g.short} is not set up yet ({e}).")
+            for p in problems:
+                log(p)
+            if problems and not (self.busy or self.choosing):
+                self.ui(self.view.detail, " ".join(problems))
+        finally:
+            self.setup_done.set()
+        for g in self.games:
+            try:
+                from spfl_faces import real_face_ids
+                log(f"{g.short} players with a real face: {len(real_face_ids(g.dir))}")
+            except Exception as e:  # noqa: BLE001 - read again (and logged) when a match is built
+                log(f"{g.short} real faces not read yet ({e})")
+        return problems
 
     # ------------------------------------------------------------------ UI helpers (any thread)
     def ui(self, fn, *args, **kw):
@@ -142,6 +166,9 @@ class Bridge:
         log(s)
         self.ui(self.view.detail, s)
 
+    def game_names(self) -> str:
+        return " or ".join(g.name for g in self.games)
+
     def waiting_view(self, detail: str = ""):
         self.view.status("Watching FM24", "ok")
         self.view.idle("Waiting for match day", "Play FM24 as normal. The choice pops up in FM24 when you press "
@@ -149,7 +176,7 @@ class Bridge:
         self.view.step(-1)
         self.view.buttons(False, False)
         self.view.message("Waiting for match day", "Play FM24 as normal. When you press Match Preview on match day, "
-                          "FM24 asks whether you want to play the match yourself in SP Football Life 2026.", detail)
+                          f"FM24 asks whether you want to play the match yourself in {self.game_names()}.", detail)
 
     def card_teams(self, plan: dict | None = None) -> tuple[dict, dict]:
         md = self.matchday
@@ -222,7 +249,7 @@ class Bridge:
         self.view.fixture(*self.card_teams(), "FM24  ·  Match day")
         self.view.step(-1)
         self.view.status("Choose in FM24", "warn")
-        self.view.message("Match day: choose in FM24", f"{home} v {away}: play it in SP Football Life 2026 or let "
+        self.view.message("Match day: choose in FM24", f"{home} v {away}: play it in {self.game_names()} or let "
                           "FM24 simulate it. The choice is open in FM24's window.")
         try:
             import fm_graphics
@@ -238,13 +265,13 @@ class Bridge:
             ctypes.windll.user32.GetWindowRect(h, ctypes.byref(r))
             self.fm_ui.enable(False)
             self.dialog = ChoiceDialog(self.root, (r.left, r.top, r.right, r.bottom), teams, "FM24",
-                                       lambda: self.choose(True), lambda: self.choose(False))
+                                       [g.short for g in self.games], self.choose, lambda: self.choose(None))
             self.root.after(1500, self._keep_dialog_up)
         except Exception as e:  # noqa: BLE001 - fall back to this window's buttons
             log(f"choice in FM24 not shown ({e}); asking in the bridge window")
             self.fm_ui.enable(True)
             self.view.buttons(True, True)
-            self.view.message(*two_lines(TEXT["prompt"].format(home=home, away=away)))
+            self.view.message(*two_lines(TEXT["prompt"].format(home=home, away=away, game=self.game_names())))
             self.root.deiconify()
             self.root.attributes("-topmost", True)
             self.root.lift()
@@ -256,19 +283,22 @@ class Bridge:
             return
         if not is_window(self.fm_ui.h):
             d.close()
-            self.choose(False)
+            self.choose(None)
             return
         for t in (d.shade, d.win):
             t.lift()
             t.attributes("-topmost", True)
         self.root.after(1500, self._keep_dialog_up)
 
-    def choose(self, spfl: bool):
+    def choose(self, game: int | None):
+        """game: index into self.games (the button pressed), None = let FM24 simulate."""
         self.fm_ui.enable(True)
         self.choosing = False
         self.view.buttons(False, False)
         self.root.attributes("-topmost", False)
-        if spfl:
+        if game is not None and 0 <= game < len(self.games):
+            if not self.busy:
+                self.game = self.games[game]
             self.play()
         else:
             self.let_sim()
@@ -276,12 +306,13 @@ class Bridge:
     def let_sim(self):
         if self.busy:
             return
-        install.clear_match_root(self.spfl_dir)
+        for g in self.games:
+            install.clear_match_root(g.sider)
         self.view.score(None, None, "FM24 SIMULATES", "idle")
         self.view.status("Watching FM24", "ok")
         self.view.message("FM24 simulates this one", "Waiting for the next match day...")
 
-    # ------------------------------------------------------------------ SPFL
+    # ------------------------------------------------------------------ the game (PES 2021 / SPFL26)
     def play(self):
         if self.busy or not self.matchday:
             return
@@ -289,8 +320,8 @@ class Bridge:
         self.fm_done = threading.Event()
         self.fm_ok = False
         self.view.step(0)
-        self.view.status("Preparing SPFL26", "busy")
-        self.view.message("Building the squads", "Rebuilding both FM24 match squads in SP Football Life 2026...")
+        self.view.status(f"Preparing {self.game.short}", "busy")
+        self.view.message("Building the squads", f"Rebuilding both FM24 match squads in {self.game.name}...")
         threading.Thread(target=self._play, daemon=True).start()
         threading.Thread(target=self._fm_sim, daemon=True).start()
 
@@ -300,7 +331,7 @@ class Bridge:
         try:
             self.fm_ui.play_to_full_time(status=lambda s: setattr(self, "fm_status", s), log=log)
             self.fm_ok = True
-            log("FM24 is at full time, waiting for the SPFL26 result")
+            log(f"FM24 is at full time, waiting for the {self.game.short} result")
         except Exception as e:  # noqa: BLE001 - the player can still play FM's match out by hand
             log(f"FM24 auto-sim stopped: {e}")
         finally:
@@ -313,10 +344,10 @@ class Bridge:
         return "home"
 
     def _play(self):
-        md = self.matchday
+        md, g = self.matchday, self.game
         try:
-            sider = os.path.join(self.spfl_dir, "SiderAddons")
-            root = os.path.join(sider, "livecpk", "matchday")
+            self._ensure_setup(g)
+            sider, root = g.sider, g.root
             self.writer = None
             fm_date = None
             try:
@@ -331,15 +362,15 @@ class Bridge:
             except Exception as e:  # noqa: BLE001
                 self.writer = None
                 self.detail_msg(f"FM24 fixture not found for the result write-back ({e}).")
-            install.clear_match_root(self.spfl_dir)
-            db = PesDb.load(self.spfl_dir, [os.path.join(sider, "livecpk", "root")])
+            install.clear_match_root(sider)
+            db = PesDb.load(g.dir, g.extra_roots)
             try:
                 from spfl_faces import real_face_ids
-                faces = real_face_ids(self.spfl_dir)
+                faces = real_face_ids(g.dir)
             except Exception as e:  # noqa: BLE001 - records are lent without knowing their faces
                 faces = None
-                log(f"SPFL26 real faces not read ({e})")
-            b = MatchBuilder(db, faces)
+                log(f"{g.short} real faces not read ({e})")
+            b = self.builder = MatchBuilder(db, faces, g.key)
             plan = b.build(md, fm_date_value(self.writer.date) if self.writer and self.writer.date else datetime.date.today())
             self.plan = plan
             b.write_root(root)
@@ -347,8 +378,8 @@ class Bridge:
             if b.face_lends or b.portrait_lends or b.blank_portraits:
                 try:
                     from spfl_faces import lend_faces
-                    n = lend_faces(self.spfl_dir, root, b.face_lends, b.portrait_lends, b.blank_portraits)
-                    log(f"faces: {len(b.face_lends)} players show their own SPFL26 face, {len(b.hidden_faces)} "
+                    n = lend_faces(g.dir, root, b.face_lends, b.portrait_lends, b.blank_portraits)
+                    log(f"faces: {len(b.face_lends)} players show their own {g.short} face, {len(b.hidden_faces)} "
                         f"borrowed real faces hidden, {len(b.blank_portraits)} without a portrait ({n} files)")
                 except Exception as e:  # noqa: BLE001 - the borrowed records keep their own faces
                     log(f"faces not lent ({e})")
@@ -360,29 +391,39 @@ class Bridge:
                 f.write("\n".join(b.log))
             home, away = self.card_teams(plan)
             self.ui(self.view.fixture, home, away, f"FM24  ·  {fm_date}" if fm_date else "FM24")
-            where = "; ".join(f"{p['fm_name']}: " + (f"spare slot ({p['league']})" if p["spare_slot"]
-                                                       else f"{p['spfl_name']} ({p['league'] or 'SPFL26'})")
+            where = "; ".join(f"{p['fm_name']}: " + (f"in {p['slot_name'].title()}'s slot" if p["spare_slot"]
+                                                       else f"{p['spfl_name']} ({p['league'] or g.short})")
                               for p in (plan["home"], plan["away"]))
-            log(f"plan: {where}")
+            log(f"plan in {g.short}: {where}")
             self.ui(self.view.step, 1)
+            import spfl_scorers
+            spfl_scorers.use_game(g.exe)
+            for other in self.games:                  # one game at a time: both would read the bridge's controller
+                if other is not g and is_running(other.exe):
+                    log(f"closing {other.short}: this match is played in {g.short}")
+                    self._restore_live()
+                    stop_processes((other.exe, "sider.exe"))
             hot = self._load_running(b)
             req = os.path.join(sider, "matchday", "request.txt")
             with open(req + ".tmp", "w", encoding="utf-8") as f:     # the running game polls this file
                 f.write(request_lines(md, plan, "FM24", fm_date or datetime.date.today().isoformat()))
             os.replace(req + ".tmp", req)
             if hot:
-                self.ui(self.view.status, "SPFL26 already running", "busy")
-                self.say("Loading the match into SP Football Life 2026",
-                         "SPFL26 is already running: the FM24 squads went straight into it, no restart needed.", where)
+                self.ui(self.view.status, f"{g.short} already running", "busy")
+                self.say(f"Loading the match into {g.name}",
+                         f"{g.short} is already running: the FM24 squads went straight into it, no restart needed.",
+                         where)
                 pad_ok = True
             else:
-                self.ui(self.view.status, "Starting SPFL26", "busy")
-                self.say("Starting SP Football Life 2026", TEXT["spfl_restart"], where)
-                if is_running("FL_2026.exe") or is_running("sider.exe"):
-                    stop_processes(("FL_2026.exe", "sider.exe"))
+                self.ui(self.view.status, f"Starting {g.short}", "busy")
+                self.say(f"Starting {g.name}", TEXT["game_restart"].format(game=g.name), where)
+                if is_running(g.exe) or is_running("sider.exe"):
+                    stop_processes((g.exe, "sider.exe"))
                 pad_ok = self._install_pad()
-                ctypes.windll.shell32.ShellExecuteW(None, "runas", os.path.join(self.spfl_dir, "FL 2026 start.exe"),
-                                                    None, self.spfl_dir, 1)
+                self._launch()
+                if not self._sider_ready():
+                    raise RuntimeError(f"Sider did not load in {g.short}, so the FM24 squads can't go in. Its log "
+                                       f"{os.path.join(g.sider, 'sider.log')} says why.")
             threading.Thread(target=self.wait_result, daemon=True).start()
             self._drive(pad_ok, hot)
         except Exception as e:  # noqa: BLE001
@@ -390,48 +431,125 @@ class Bridge:
             log(f"build failed: {e}")
             self.ui(self.view.step, 0, True)
             self.ui(self.view.status, "Build failed", "error")
-            self.say("Could not build the SPFL26 match", str(e))
+            self.say(f"Could not build the {g.short} match", str(e))
+
+    def _ensure_setup(self, g):
+        """The game's Sider is set up (PES 2021: downloaded) before its first match; a failed setup is retried."""
+        self.setup_done.wait(300)
+        sider_ok = os.path.exists(os.path.join(g.sider, "sider.exe" if g.key == "pes2021" else "sider.ini"))
+        if sider_ok and os.path.exists(os.path.join(g.sider, "modules", "matchday.lua")):
+            return
+        self.ui(self.view.message, f"Setting up {g.name}", "Getting Sider, the mod loader the bridge uses in the game "
+                "(official Sider 7.4.1 from GitHub)..." if g.key == "pes2021" else "")
+        done = install.install_pes2021(g.dir) if g.key == "pes2021" else install.install_spfl(g.dir)
+        log(f"{g.short}: " + "; ".join(done))
+
+    def _sider_ready(self, timeout: float = 360.0) -> bool:
+        """Wait until matchday.lua has started in the game just launched: it rewrites hooks.txt once Sider has set up
+        its hooks, seconds after the start normally, but minutes on the first start after Sider was installed (Sider
+        then searches the whole exe while the game is already up). The menus are walked only after that."""
+        g = self.game
+        p = os.path.join(g.matchday, "hooks.txt")
+        since, said = self.launched_at, False
+        end = time.time() + timeout
+        while time.time() < end:
+            try:
+                if os.path.getmtime(p) >= since:
+                    log(f"matchday.lua started in {g.short} {time.time() - since:.0f}s after the launch")
+                    return True
+            except OSError:
+                pass
+            if not said and time.time() - since > 45:
+                said = True
+                self.say(f"Starting {g.name}", "Sider is still setting itself up inside the game. The first start "
+                         "after it was installed takes a few minutes; later starts take seconds.")
+            time.sleep(1)
+        log(f"matchday.lua did not start in {g.short} within {timeout:.0f}s")
+        return False
+
+    def _write_live(self):
+        """The FM24 players straight into the running game's memory (Select Team is reached, so its database is
+        loaded). After a fresh start the LiveCPK root normally put them there already; this covers a Sider that came
+        up after the game had read its database (first start after Sider was installed)."""
+        if getattr(self, "live", None) is not None:
+            return
+        from spfl_live import LiveDb
+        live = LiveDb(self.game.exe)
+        n = live.write_players(self.builder.assigned)
+        self.live = live
+        log(f"wrote {n} FM24 players into {self.game.short}'s memory at Select Team")
+
+    def _launch(self):
+        """Start the game with Sider. SPFL26: its own launcher, as administrator. PES 2021: sider.exe, which starts
+        the game through Steam (start.game in sider.ini); explorer.exe runs it un-elevated like a double-click, so
+        neither Steam nor the game inherits the bridge's administrator rights. A Sider set up without start.game
+        gets the game started through Steam here as well."""
+        g = self.game
+        self.launched_at = time.time()
+        if g.key == "spfl26":
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", os.path.join(g.dir, "FL 2026 start.exe"), None, g.dir, 1)
+            return
+        subprocess.Popen(["explorer.exe", os.path.join(g.sider, "sider.exe")], creationflags=0x08000000)
+
+        def steam_fallback():
+            time.sleep(25)
+            if not is_running(g.exe):
+                log(f"{g.short} did not start from Sider; asking Steam")
+                subprocess.Popen(["explorer.exe", f"steam://rungameid/{install.PES_APPID}"], creationflags=0x08000000)
+        threading.Thread(target=steam_fallback, daemon=True).start()
 
     def _load_running(self, builder) -> bool:
-        """A running SPFL26 (with the controller proxy and this version of matchday.lua) gets the squads written
+        """A running game (with the controller proxy and this version of matchday.lua) gets the squads written
         into its memory instead of a restart. False: restart as before."""
+        g = self.game
         prev, self.live = getattr(self, "live", None), None
-        if not is_running("FL_2026.exe"):
+        if not is_running(g.exe):
             return False
         try:
             import spfl_pad
             spfl_pad.shm()
-            if not spfl_pad.polled(2):
-                log("SPFL26 is running without the controller proxy: restarting it")
-                return False
             if not self._lua_current():
-                log("SPFL26 is running an older matchday.lua: restarting it")
+                log(f"{g.short} is running without Sider (e.g. started from Steam) or with an older matchday.lua: "
+                    "restarting it")
+                return False
+            if not spfl_pad.polled(2):
+                log(f"{g.short} is running without the controller proxy: restarting it")
                 return False
             self._restore_live(prev)                 # the previous match's FM24 players stayed in until now
             from spfl_live import LiveDb
-            self.live = LiveDb()
+            self.live = LiveDb(g.exe)
             n = self.live.write_players(builder.assigned)
-            log(f"wrote {n} FM24 players into the running SPFL26")
+            log(f"wrote {n} FM24 players into the running {g.short}")
             return True
         except Exception as e:  # noqa: BLE001 - fall back to a restart (the LiveCPK root is written already)
-            log(f"could not load the match into the running SPFL26 ({e}): restarting it")
+            log(f"could not load the match into the running {g.short} ({e}): restarting it")
             if getattr(self, "live", None):
                 self.live.restore()
             self.live = None
             return False
 
     def _lua_current(self) -> bool:
-        """The running game loaded a matchday.lua that polls request.txt and applies rosters around the Select Team pick and hides borrowed faces (0.5.4+): its
-        sider.log line says so."""
+        """The running game has Sider in it (a game started from Steam alone has not) and loaded a matchday.lua that
+        knows this exe (0.6.0+): sider.dll is among its modules and its sider.log line says so."""
+        g = self.game
         try:
-            text = open(os.path.join(self.spfl_dir, "SiderAddons", "sider.log"), encoding="utf-8", errors="replace").read()
+            from procmem import Proc
+            p = Proc(g.exe)
+            try:
+                p._module("sider.dll")
+            finally:
+                p.close()
+        except (LookupError, OSError, PermissionError, ProcessLookupError):
+            return False
+        try:
+            text = open(os.path.join(g.sider, "sider.log"), encoding="utf-8", errors="replace").read()
         except OSError:
             return False
         m = re.findall(r"matchday: matchday\.lua (\d+)\.(\d+)(?:\.(\d+))?", text)
-        return bool(m) and tuple(int(x or 0) for x in m[-1]) >= (0, 5, 4)
+        return bool(m) and tuple(int(x or 0) for x in m[-1]) >= (0, 6, 0)
 
     def _write_crests(self, root: str, md: dict, plan: dict):
-        """Clubs SPFL26 lacks wear FM24's own logo as their crest (a drawn badge when FM has none)."""
+        """Clubs in a spare slot wear FM24's own logo as their crest (a drawn badge when FM has none)."""
         import fm_graphics
         for side in ("home", "away"):
             p = plan[side]
@@ -451,8 +569,8 @@ class Bridge:
         try:
             import spfl_pad
             spfl_pad.shm()
-            if spfl_pad.install(self.spfl_dir, install.resource("spfl", "xinput", "xinput1_3.dll")):
-                log("installed the controller proxy xinput1_3.dll into the SPFL26 folder")
+            if spfl_pad.install(self.game.dir, install.resource("spfl", "xinput", "xinput1_3.dll")):
+                log(f"installed the controller proxy xinput1_3.dll into the {self.game.short} folder")
             return True
         except Exception as e:  # noqa: BLE001 - no auto-pick: the player picks the teams as before
             log(f"controller proxy not installed: {e}")
@@ -460,24 +578,24 @@ class Bridge:
 
     def _drive(self, pad_ok: bool, hot: bool = False):
         """Title screen -> Local Match -> sides -> teams -> pre-match screen, then the player takes over."""
-        plan, side = self.plan, self.user_side()
+        plan, side, g = self.plan, self.user_side(), self.game
         you = plan[side]["fm_name"]
+        where = {s: f" ({plan[s]['league']})" if plan[s]["league"] else "" for s in ("home", "away")}
         manual = TEXT["pick_teams"].format(home_spfl=plan["home"]["spfl_name"], away_spfl=plan["away"]["spfl_name"],
-                                           home_league=plan["home"]["league"] or "its league",
-                                           away_league=plan["away"]["league"] or "its league")
+                                           home_where=where["home"], away_where=where["away"])
         self.ui(self.view.step, 2)
         self.ui(self.view.status, "Picking teams", "busy")
-        self.say("Setting up the match", TEXT["drive_busy"].format(home=plan["home"]["spfl_name"],
+        self.say("Setting up the match", TEXT["drive_busy"].format(home=plan["home"]["spfl_name"], game=g.short,
                                                                    away=plan["away"]["spfl_name"], you=you))
         err = "the controller proxy could not be installed"
         if pad_ok:
             from spfl_drive import BackOutError, DriveError, Driver
             for attempt in (("hot", "cold") if hot else ("cold",)):
                 if attempt == "cold" and hot:
-                    self._restart_spfl(err)
+                    self._restart_game(err)
                 d = Driver(plan, side, status=lambda s: self.detail_msg(s), log=log,
-                           shots=os.path.join(os.path.dirname(LOG), "last_match"),
-                           sider=os.path.join(self.spfl_dir, "SiderAddons"))
+                           shots=os.path.join(os.path.dirname(LOG), "last_match"), sider=g.sider, exe=g.exe,
+                           before_teams=self._write_live)
                 try:
                     d.run(from_anywhere=(attempt == "hot"))
                     err = None
@@ -496,32 +614,34 @@ class Bridge:
                 break
         if err is None:
             self.ui(self.view.step, 3)
-            self.ui(self.view.status, "Your turn in SPFL26", "ok")
-            self.say("Your turn", TEXT["drive_ready"].format(you=you, side=side),
-                     "The live score shows here. Scorers are read from SPFL26's goal captions, so keep its window "
+            self.ui(self.view.status, f"Your turn in {g.short}", "ok")
+            self.say("Your turn", TEXT["drive_ready"].format(you=you, side=side, game=g.short),
+                     f"The live score shows here. Scorers are read from {g.short}'s goal captions, so keep its window "
                      "open (it may be covered, not minimized).")
         else:
             log(f"auto-pick stopped: {err}")
             self.ui(self.view.step, 2, True)
             self.ui(self.view.status, "Pick the teams yourself", "warn")
-            self.say("Pick the teams in SPFL26", manual + f" Put controller 1 on {you} ({side}).",
+            self.say(f"Pick the teams in {g.short}", manual + f" Put controller 1 on {you} ({side}).",
                      f"Automatic setup stopped: {err}.")
 
-    def _restart_spfl(self, why: str):
-        """The running SPFL26 could not be set up from where it was: start it again (the squads are in the
+    def _restart_game(self, why: str):
+        """The running game could not be set up from where it was: start it again (the squads are in the
         LiveCPK root already; matchday.lua reads request.txt when it loads)."""
-        log(f"restarting SPFL26: {why}")
-        self.ui(self.view.status, "Restarting SPFL26", "busy")
-        self.say("Restarting SP Football Life 2026", f"It could not be set up where it was ({why}), so it is "
+        g = self.game
+        log(f"restarting {g.short}: {why}")
+        self.ui(self.view.status, f"Restarting {g.short}", "busy")
+        self.say(f"Restarting {g.name}", f"It could not be set up where it was ({why}), so it is "
                  "restarted with this match's squads.")
         self.live = None                             # the game's memory goes with it
-        stop_processes(("FL_2026.exe", "sider.exe"))
-        res = os.path.join(self.spfl_dir, "SiderAddons", "matchday", "result.txt")
+        stop_processes((g.exe, "sider.exe"))
+        res = os.path.join(g.matchday, "result.txt")
         if os.path.exists(res):
             os.remove(res)                           # the abandoned match's live score
         self._install_pad()
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", os.path.join(self.spfl_dir, "FL 2026 start.exe"),
-                                            None, self.spfl_dir, 1)
+        self._launch()
+        if not self._sider_ready():
+            log(f"Sider did not load in {g.short} (see {os.path.join(g.sider, 'sider.log')})")
 
     def wait_result(self):
         try:
@@ -530,9 +650,10 @@ class Bridge:
             self.busy = False
 
     def _wait_result(self):
-        p = os.path.join(self.spfl_dir, "SiderAddons", "matchday", "result.txt")
+        game = self.game
+        p = os.path.join(game.matchday, "result.txt")
         md = self.matchday
-        goals: list[dict] = []          # one per SPFL goal: side, minute, scorer (FM person id or None)
+        goals: list[dict] = []          # one per goal: side, minute, scorer (FM person id or None)
         readers: list[threading.Thread] = []
         prefetch = None
         self.prefetched = None
@@ -544,14 +665,14 @@ class Bridge:
             from spfl_scorers import ScorerReader
             scorer = ScorerReader(self.plan)
         except Exception as e:  # noqa: BLE001 - no OCR: the score still goes back, scorers stay FM's own
-            self.detail_msg(f"Scorers can't be read from SPFL26 ({e}); only the score goes back.")
+            self.detail_msg(f"Scorers can't be read from {game.short} ({e}); only the score goes back.")
 
         def read_scorer(g):
             hit = scorer.read(g["side"]) if scorer else None
             g["own"] = bool(hit and hit.get("own_goal"))
             g["pid"] = hit.get("fm_pid") if hit else None
             g["name"] = hit.get("name") if hit else None
-            log(f"SPFL goal {g['minute']}' side {g['side']}: {g['name'] or 'scorer not read'}"
+            log(f"goal {g['minute']}' side {g['side']}: {g['name'] or 'scorer not read'}"
                 + (" (own goal)" if g["own"] else ""))
 
         def label(g) -> str:
@@ -597,11 +718,11 @@ class Bridge:
                 if live != shown:
                     if not shown:
                         self.ui(self.view.step, 3)
-                        self.ui(self.view.status, "Live in SPFL26", "ok")
+                        self.ui(self.view.status, f"Live in {game.short}", "ok")
                     shown = live
-                    log(f"Live in SPFL26: {live}")
+                    log(f"Live in {game.short}: {live}")
                     self.ui(self.view.score, hg, ag, f"LIVE  {r.get('minute')}'", "live")
-                    self.ui(self.view.message, "Live in SP Football Life 2026",
+                    self.ui(self.view.message, f"Live in {game.name}",
                             scorer_lines() or "No goals yet.", getattr(self, "fm_status", ""))
                 continue
             if int(r.get("minute", 0)) < 90 and int(r.get("period", 0)) < 3:
@@ -609,7 +730,7 @@ class Bridge:
                 self.ui(self.view.score, hg, ag, f"LEFT AT {r.get('minute')}'", "warn")
                 self.ui(self.view.step, 3, True)
                 self.ui(self.view.status, "Match left early", "warn")
-                self.say("Nothing goes into FM24", f"The SPFL26 match was left at {r.get('minute')}' ({line}), so "
+                self.say("Nothing goes into FM24", f"The {game.short} match was left at {r.get('minute')}' ({line}), so "
                          "FM24's own result stands. Carry on in FM24.")
                 return
             break
@@ -628,9 +749,9 @@ class Bridge:
         read = sum(1 for g in goals if g["pid"])
         self.ui(self.view.step, 4)
         self.ui(self.view.status, "Waiting for FM24's full time", "busy")
-        title, body = two_lines(TEXT["writeback_wait"].format(home=md["home"]["name"], away=md["away"]["name"],
+        title, body = two_lines(TEXT["writeback_wait"].format(home=md["home"]["name"], away=md["away"]["name"], game=game.short,
                                                               hg=hg, ag=ag))
-        self.say(title, body, f"Scorers read from SPFL26: {read} of {hg + ag}. "
+        self.say(title, body, f"Scorers read from {game.short}: {read} of {hg + ag}. "
                  + ", ".join(label(g) for g in goals))
         events, prepared, left, left_at, leave_tries = None, False, False, 0.0, 0
         self.spfl_over.set()
@@ -642,7 +763,7 @@ class Bridge:
                 if not is_running("fm.exe"):
                     self.ui(self.view.step, 4, True)
                     self.ui(self.view.status, "Not saved", "error")
-                    self.say("Not saved", "FM24 closed before its match finished; the SPFL26 score was not saved.")
+                    self.say("Not saved", f"FM24 closed before its match finished; the {game.short} score was not saved.")
                     return
                 res = self.writer.apply(hg, ag)
                 if not prepared and res["finished"]:          # FM's full time: its own events still intact
@@ -657,13 +778,13 @@ class Bridge:
                         (not left or (time.time() - left_at > 30 and leave_tries < 2)):
                     left, left_at, leave_tries = True, time.time(), leave_tries + 1
                     if self.fm_ok:
-                        self.detail_msg("FM24 full time: SPFL26 result swapped in; leaving FM's match screen.")
+                        self.detail_msg(f"FM24 full time: {game.short} result swapped in; leaving FM's match screen.")
                         try:
                             self.fm_ui.leave_match(log=log)
                         except Exception as e:  # noqa: BLE001
                             self.detail_msg(f"Leave FM24's match screen to save the result ({e}).")
                     else:
-                        self.detail_msg("FM24 full time: SPFL26 result swapped in. Leave the match screen to save it.")
+                        self.detail_msg(f"FM24 full time: {game.short} result swapped in. Leave the match screen to save it.")
                 if res["committed"]:
                     if events is not None:
                         self.writer.apply_events(events)
@@ -706,9 +827,9 @@ class Bridge:
             live, self.live = getattr(self, "live", None), None
         if live:
             try:
-                log(f"restored {live.restore()} SPFL26 players")
+                log(f"restored {live.restore()} players in the game")
             except Exception as e:  # noqa: BLE001 - the game may have been closed
-                log(f"SPFL26 players not restored: {e}")
+                log(f"the game's players not restored: {e}")
 
     def _prepare_events(self, goals: list[dict]):
         """At FM's full time: FM's own events (read before anything is changed), then the SPFL scorers' event
@@ -785,42 +906,51 @@ def reconcile_goals(goals: list[dict], hg: int, ag: int) -> list[dict]:
 
 
 def main():
-    if "--selftest" in sys.argv:            # checks the bundled capture + OCR: SPFL26's window text -> bridge.log
+    if "--selftest" in sys.argv:            # checks the bundled capture + OCR: the game window's text -> bridge.log
         import spfl_drive  # noqa: F401
         import fm_drive  # noqa: F401
         import fm_graphics
         import spfl_pad
         import ui  # noqa: F401
-        from spfl_scorers import WindowFrames, _window, ocr_lines
+        from spfl_scorers import WindowFrames, _window, ocr_lines, use_game
         dll = install.resource("spfl", "xinput", "xinput1_3.dll")
-        game = install.find_spfl26()
+        found = find_games()
+        game = next((g for g in found if is_running(g.exe)), found[0] if found else None)
         logo = fm_graphics.club_logo(install.find_fm24(), 694)
         try:
             from spfl_live import LiveDb
-            live = f"{len(LiveDb().addr)} live SPFL26 players" if is_running("FL_2026.exe") else "SPFL26 not running"
+            live = (f"{len(LiveDb(game.exe).addr)} live players in {game.short}" if game and is_running(game.exe)
+                    else "no game running")
         except Exception as e:  # noqa: BLE001
-            live = f"live SPFL26 read failed: {e}"
+            live = f"live players not read: {e}"
         from PIL import Image, ImageTk
         t = tk.Tk()
         ph = ImageTk.PhotoImage(Image.open(io.BytesIO(logo)) if logo else Image.new("RGBA", (8, 8)))
         t.destroy()
-        log(f"selftest: proxy {os.path.getsize(dll) if os.path.exists(dll) else 'MISSING'} B, installed in game: "
-            f"{spfl_pad.installed(game, dll) if game else None}, game reading it: {spfl_pad.polled(2)}, "
-            f"FM24 logo for club 694: {len(logo) if logo else None} B, ImageTk {ph.width()}x{ph.height()}, {live}")
+        log(f"selftest: games {[g.short for g in found]}, proxy {os.path.getsize(dll) if os.path.exists(dll) else 'MISSING'} B, "
+            f"installed in game: {spfl_pad.installed(game.dir, dll) if game else None}, game reading it: "
+            f"{spfl_pad.polled(2)}, FM24 logo for club 694: {len(logo) if logo else None} B, "
+            f"ImageTk {ph.width()}x{ph.height()}, {live}")
+        if game:
+            use_game(game.exe)
         h = _window()
         frames = WindowFrames(h) if h else None
         img = frames.client_image(2.0) if frames else None
-        log(f"selftest: SPFL26 window {h:#x}, frame {img.size if img else None}, "
+        log(f"selftest: game window {h:#x} ({game.short if game else 'no game'}), frame {img.size if img else None}, "
             f"OCR {ocr_lines(img)[:8] if img else None!r}")
         if frames:
             frames.stop()
         return
     if "--uninstall" in sys.argv:
         from tkinter import messagebox
-        game = install.find_spfl26()
-        done = install.uninstall_spfl(game) if game else ["SP Football Life 2026 not found; nothing to remove"]
+        done = []
+        for g in find_games():
+            if is_running(g.exe):
+                done.append(f"{g.short}: still running, nothing removed; close it and run --uninstall again")
+                continue
+            done += [f"{g.short}: {d}" for d in install.uninstall_game(g.dir, g.sider, g.name)]
         tk.Tk().withdraw()
-        messagebox.showinfo(APP, "\n".join(done))
+        messagebox.showinfo(APP, "\n".join(done) or "Neither PES 2021 nor SP Football Life 2026 found; nothing to remove.")
         return
     try:
         ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))   # physical pixels, like FM24

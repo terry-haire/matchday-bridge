@@ -1,11 +1,16 @@
-/* Matchday Bridge - XInput proxy for SP Football Life 2026.
+/* Matchday Bridge - XInput proxy for PES 2021 and SP Football Life 2026.
 
-   Installed as <game>\xinput1_3.dll by MatchdayBridge.exe (the game's own Microsoft copy is renamed
+   Installed as <game>\xinput1_3.dll by MatchdayBridge.exe (a game's own Microsoft copy is renamed
    xinput1_3_orig.dll and does all the real work; without one the system xinput1_3/1_4 is used). Buttons written
    by bridge\spfl_pad.py into the shared memory "Local\MatchdayBridgePad" are merged into controller slot 0 - the
-   slot of the player's own pad, i.e. SPFL26 "User 1" - so the bridge can walk the menus to the pre-match screen
-   (and the dev testkit can play) while the game window is in the background. A real pad in slot 0 keeps
+   slot of the player's own pad, i.e. the game's "User 1" - so the bridge can walk the menus to the pre-match
+   screen (and the dev testkit can play) while the game window is in the background. A real pad in slot 0 keeps
    working (its input is OR-ed with ours); input the bridge did not refresh expires after a second.
+
+   Steam's overlay (in games Steam starts, like PES 2021) inline-hooks every XInput export, ours included, and its
+   hook answers the game without calling through, so the merge never ran. The game's own import entries are
+   therefore pointed at the Outer* functions (not exported, so never hooked): they call the export - Steam's hook
+   when there is one, so Steam Input and real pads keep working - and merge the bridge's buttons on top.
 
    Build: python testkit\pad.py build   (clang, no CRT) */
 #define WIN32_LEAN_AND_MEAN
@@ -45,6 +50,9 @@ static Wait_t pWaitGuide;
 static Slot_t pCancelGuide, pPowerOff;
 static SHM *volatile g_shm;
 static volatile ULONGLONG g_next_open;
+static volatile LONG g_outer;    /* the game calls the Outer* wrappers: the exports only pass through */
+
+static void patch_imports(void);
 
 static HMODULE load_real(void) {
     WCHAR path[MAX_PATH];
@@ -80,6 +88,7 @@ static BOOL CALLBACK init(PINIT_ONCE o, PVOID p, PVOID *c) {
     pWaitGuide = (Wait_t)GetProcAddress(h, MAKEINTRESOURCEA(101));
     pCancelGuide = (Slot_t)GetProcAddress(h, MAKEINTRESOURCEA(102));
     pPowerOff = (Slot_t)GetProcAddress(h, MAKEINTRESOURCEA(103));
+    patch_imports();
     return TRUE;
 }
 
@@ -142,30 +151,14 @@ static DWORD merge(DWORD slot, XSTATE *s, DWORD r) {
     return r;
 }
 
-DWORD WINAPI XInputGetState(DWORD i, XSTATE *s) {
-    ready();
-    return merge(i, s, pGetState ? pGetState(i, s) : ERROR_DEVICE_NOT_CONNECTED);
-}
-
-DWORD WINAPI XInputGetStateEx(DWORD i, XSTATE *s) {
-    ready();
-    return merge(i, s, pGetStateEx ? pGetStateEx(i, s) : (pGetState ? pGetState(i, s) : ERROR_DEVICE_NOT_CONNECTED));
-}
-
-DWORD WINAPI XInputSetState(DWORD i, XVIB *v) {
-    DWORD r;
+static DWORD set_ok(DWORD i, DWORD r) {
     SHM *m;
-    ready();
-    r = pSetState ? pSetState(i, v) : ERROR_DEVICE_NOT_CONNECTED;
     if (r != ERROR_SUCCESS && (m = target(i)) && m->connect) r = ERROR_SUCCESS;
     return r;
 }
 
-DWORD WINAPI XInputGetCapabilities(DWORD i, DWORD flags, XCAPS *c) {
-    DWORD r;
+static DWORD caps(DWORD i, XCAPS *c, DWORD r) {
     SHM *m;
-    ready();
-    r = pGetCaps ? pGetCaps(i, flags, c) : ERROR_DEVICE_NOT_CONNECTED;
     if (r != ERROR_SUCCESS && c && (m = target(i)) && m->connect) {
         c->Type = 1;             /* XINPUT_DEVTYPE_GAMEPAD */
         c->SubType = 1;          /* XINPUT_DEVSUBTYPE_GAMEPAD */
@@ -177,6 +170,82 @@ DWORD WINAPI XInputGetCapabilities(DWORD i, DWORD flags, XCAPS *c) {
         r = ERROR_SUCCESS;
     }
     return r;
+}
+
+DWORD WINAPI XInputGetState(DWORD i, XSTATE *s) {
+    DWORD r;
+    ready();
+    r = pGetState ? pGetState(i, s) : ERROR_DEVICE_NOT_CONNECTED;
+    return g_outer ? r : merge(i, s, r);
+}
+
+DWORD WINAPI XInputGetStateEx(DWORD i, XSTATE *s) {
+    DWORD r;
+    ready();
+    r = pGetStateEx ? pGetStateEx(i, s) : (pGetState ? pGetState(i, s) : ERROR_DEVICE_NOT_CONNECTED);
+    return g_outer ? r : merge(i, s, r);
+}
+
+DWORD WINAPI XInputSetState(DWORD i, XVIB *v) {
+    DWORD r;
+    ready();
+    r = pSetState ? pSetState(i, v) : ERROR_DEVICE_NOT_CONNECTED;
+    return g_outer ? r : set_ok(i, r);
+}
+
+DWORD WINAPI XInputGetCapabilities(DWORD i, DWORD flags, XCAPS *c) {
+    DWORD r;
+    ready();
+    r = pGetCaps ? pGetCaps(i, flags, c) : ERROR_DEVICE_NOT_CONNECTED;
+    return g_outer ? r : caps(i, c, r);
+}
+
+/* Called through these pointers, the exports run whatever Steam's overlay put in front of them. */
+static GetState_t volatile next_get = XInputGetState, next_get_ex = XInputGetStateEx;
+static SetState_t volatile next_set = XInputSetState;
+static GetCaps_t volatile next_caps = XInputGetCapabilities;
+
+static DWORD WINAPI OuterGetState(DWORD i, XSTATE *s) { return merge(i, s, next_get(i, s)); }
+static DWORD WINAPI OuterGetStateEx(DWORD i, XSTATE *s) { return merge(i, s, next_get_ex(i, s)); }
+static DWORD WINAPI OuterSetState(DWORD i, XVIB *v) { return set_ok(i, next_set(i, v)); }
+static DWORD WINAPI OuterGetCaps(DWORD i, DWORD f, XCAPS *c) { return caps(i, c, next_caps(i, f, c)); }
+
+/* The game module's import entries that hold our exports -> the Outer* wrappers. */
+static void patch_imports(void) {
+    BYTE *b = (BYTE *)GetModuleHandleW(NULL);
+    IMAGE_NT_HEADERS *nt;
+    IMAGE_DATA_DIRECTORY *dir;
+    IMAGE_IMPORT_DESCRIPTOR *imp;
+    ULONG_PTR *t, to;
+    DWORD old;
+    LONG patched = 0;
+    if (!b || g_outer) return;
+    nt = (IMAGE_NT_HEADERS *)(b + ((IMAGE_DOS_HEADER *)b)->e_lfanew);
+    dir = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+    if (!dir->VirtualAddress) return;
+    g_outer = 1;
+    for (imp = (IMAGE_IMPORT_DESCRIPTOR *)(b + dir->VirtualAddress); imp->Name; imp++) {
+        if (!imp->FirstThunk) continue;
+        for (t = (ULONG_PTR *)(b + imp->FirstThunk); *t; t++) {
+            if (*t == (ULONG_PTR)XInputGetState) to = (ULONG_PTR)OuterGetState;
+            else if (*t == (ULONG_PTR)XInputGetStateEx) to = (ULONG_PTR)OuterGetStateEx;
+            else if (*t == (ULONG_PTR)XInputSetState) to = (ULONG_PTR)OuterSetState;
+            else if (*t == (ULONG_PTR)XInputGetCapabilities) to = (ULONG_PTR)OuterGetCaps;
+            else continue;
+            if (VirtualProtect(t, sizeof(*t), PAGE_READWRITE, &old)) {
+                *t = to;
+                VirtualProtect(t, sizeof(*t), old, &old);
+                patched++;
+            }
+        }
+    }
+    if (!patched) g_outer = 0;
+}
+
+BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID r) {
+    (void)h; (void)r;
+    if (reason == DLL_PROCESS_ATTACH) patch_imports();
+    return TRUE;
 }
 
 void WINAPI XInputEnable(BOOL on) { ready(); if (pEnable) pEnable(on); }

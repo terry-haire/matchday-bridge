@@ -1,12 +1,13 @@
 --[[
-matchday.lua - Matchday Bridge (FM24 x SPFL26) for Sider 7
+matchday.lua - Matchday Bridge (FM24 x PES 2021 / SP Football Life 2026) for Sider 7
 
 Shows which Football Manager 2024 fixture is loaded, and writes the live and final score to
-SiderAddons\matchday\result.txt so the Matchday Bridge app can hand it back to FM24.
+<sider>\matchday\result.txt so the Matchday Bridge app can hand it back to FM24.
 
 The squads themselves are not in this file: the bridge builds them from your FM24 match day and
-serves them through the LiveCPK root SiderAddons\livecpk\matchday (common\etc\pesdb\*.bin),
-generated from your own SPFL26 install.
+serves them through the LiveCPK root <sider>\livecpk\matchday (common\etc\pesdb\*.bin),
+generated from your own game install. The same module runs in PES2021.exe and FL_2026.exe: the exe's
+link time picks the address of its edit data (G.exes); an unknown exe gets no squad writes.
 
 Overlay: Spacebar toggles the Sider overlay; press 1 until "matchday" is shown.
 --]]
@@ -15,20 +16,19 @@ Overlay: Spacebar toggles the Sider overlay; press 1 until "matchday" is shown.
 local G = {}
 G.text = {
     banner = "FM24 MATCHDAY  {home} v {away}  ({comp}, {date})",
-    pick_teams = "Pick {home_spfl} ({home_league}) as home and {away_spfl} ({away_league}) as away in Match > Local Match. FM24 squads and ratings are loaded.",
+    pick_teams = "Pick {home_spfl}{home_where} as home and {away_spfl}{away_where} as away in Match > Local Match. FM24 squads and ratings are loaded.",
     no_request = "Matchday Bridge: no FM24 match waiting. Start it from FM24's team news screen.",
     fm_missing = "Football Manager 2024 is not installed (looked in every Steam library). Matchday Bridge needs it.",
-    spfl_missing = "SP Football Life 2026 is not installed. Matchday Bridge needs it.",
+    game_missing = "Neither eFootball PES 2021 (free on Steam as PES 2021 LITE) nor SP Football Life 2026 is installed. Matchday Bridge needs one of them.",
     result_saved = "Final score saved for FM24: {home} {hg}-{ag} {away}",
-    prompt = "Match day: {home} v {away}\nPlay this match in SP Football Life 2026, or let FM24 simulate it?",
-    writeback_wait = "Full time in SPFL26: {home} {hg}-{ag} {away}.\nFM24 plays its own match out in the background; at FM's full time this score and its scorers go in and FM24 moves on to save them. Leave FM24's window open (not minimized).",
+    prompt = "Match day: {home} v {away}\nPlay this match yourself in {game}, or let FM24 simulate it?",
+    writeback_wait = "Full time in {game}: {home} {hg}-{ag} {away}.\nFM24 plays its own match out in the background; at FM's full time this score and its scorers go in and FM24 moves on to save them. Leave FM24's window open (not minimized).",
     writeback_done = "Saved in FM24: {home} {hg}-{ag} {away}.",
-    spfl_restart = "Restarting SP Football Life 2026 so it loads this match's squads...",
-    drive_busy = "SPFL26 is starting. Matchday Bridge walks its menus for you: Local Match, {home} v {away}, controller 1 on {you}. It works in the background; you don't need to touch the game yet.",
-    drive_ready = "SPFL26 is on the pre-match screen. Choose kits and stadium, then Kick Off. You play {you} ({side}) with controller 1. FM24 is simulating its own match in the background meanwhile.",
+    game_restart = "Restarting {game} so it loads this match's squads...",
+    drive_busy = "{game} is starting. Matchday Bridge walks its menus for you: Local Match, {home} v {away}, controller 1 on {you}. It works in the background; you don't need to touch the game yet.",
+    drive_ready = "{game} is on the pre-match screen. Choose kits (and stadium), then Kick Off. You play {you} ({side}) with controller 1. FM24 is simulating its own match in the background meanwhile.",
 }
 G.off = {
-    owner_global = 0x143705e10,  -- EDIT_BLOCK: [global]+0x48 = edit block (no ASLR)
     team_count = 0xd0bcec,  -- EDIT_BLOCK: teams in use (749)
     player_count = 0xd0bce8,  -- EDIT_BLOCK: players in use; grew 29492->29524 with our 32 new players
     teams = 0xadf4bc,  -- EDIT_BLOCK: team records
@@ -42,6 +42,10 @@ G.off = {
     player_id = 0x30,  -- LIVE_PLAYER: player id (Player.bin +0x08)
     names = 0x38,  -- LIVE_PLAYER: the four Player.bin name slots (+0x44 there)
 }
+G.exes = {  -- PE link timestamp of the game exe -> game and edit block owner ([[global]+0x48])
+    [1600050367] = { game = "spfl26", owner_global = 0x143705e10 },  -- FL_2026.exe 26.2.0.3
+    [1652065230] = { game = "pes2021", owner_global = 0x1431a9228 },  -- PES2021.exe 1.07.02
+}
 G.hooks = {
     spfl_db_override = { event = "livecpk_get_filepath", enabled = true },
     spfl_banner = { event = "overlay_on", enabled = true },
@@ -50,7 +54,7 @@ G.hooks = {
     spfl_autokickoff = { event = "menu automation to kickoff", enabled = false },
 }
 -- END GENERATED
-local m = { version = "0.5.4" }
+local m = { version = "0.6.0" }
 
 local dir, request, status_line = nil, nil, ""
 local last_written = ""
@@ -81,8 +85,13 @@ end
 local function u32(a) return memory.unpack("u32", memory.read(a, 4)) end
 local function u64(a) return memory.unpack("u64", memory.read(a, 8)) end
 
+-- The running exe (no ASLR: image base 0x140000000), by the link time in its PE header (set in init).
+local IMAGE = 0x140000000
+local exe_stamp, exe = 0, nil
+
 local function edit_block()
-    local owner = u64(G.off.owner_global)
+    if not exe then return nil end
+    local owner = u64(exe.owner_global)
     if owner == 0 then return nil end
     local blk = u64(owner + 0x48)
     if blk == 0 then return nil end
@@ -213,7 +222,7 @@ local function apply_squads()
     end
     if done > 0 then
         applied = true
-        log(string.format("matchday: wrote %d FM24 team changes into SPFL26 edit data", done))
+        log(string.format("matchday: wrote %d FM24 team changes into the game's edit data", done))
     end
 end
 
@@ -232,7 +241,7 @@ local function restore_squads()
     for i = #saved, 1, -1 do
         for _, part in ipairs(saved[i][2]) do memory.write(part[1], part[2]) end
     end
-    if #saved > 0 then log("matchday: restored original SPFL26 squads") end
+    if #saved > 0 then log("matchday: restored the game's original squads") end
     saved = {}
 end
 
@@ -368,7 +377,8 @@ end
 
 -- Select Team in one press per list (after forceselection.lua 2.0, the project author's Sider module: its league
 -- write-force site).
--- FL_2026.exe+C95D7B is the cursor store of the game's list widget (every menu list): [r8] = old index +/- 1, rbx =
+-- FL_2026.exe+C95D7B (PES2021.exe 1.07.02: +B8A58B, same bytes) is the cursor store of the game's list widget (every
+-- menu list): [r8] = old index +/- 1, rbx =
 -- the list. The cave records the list that moved last and a move counter; armed for one list (flag, target list), it
 -- stores the bridge's index instead. The bridge reads the cave (address in matchday\hooks.txt), finds the club in
 -- that list's own league/team vectors and sets each cursor with a single DOWN or UP.
@@ -410,12 +420,19 @@ local function install_select_hook()
 end
 
 function m.init(ctx)
+    exe_stamp = u32(IMAGE + u32(IMAGE + 0x3c) + 8)
+    exe = G.exes[exe_stamp]
     dir = ctx.sider_dir .. "matchday\\"
     fs.make_dirs(dir)
     last_request_text = read_file(dir .. "request.txt")
     request = parse_request(last_request_text)
     load_noface(request)
     log("matchday: matchday.lua " .. m.version)
+    if exe then
+        log(string.format("matchday: game %s (exe link time %d)", exe.game, exe_stamp))
+    else
+        log(string.format("matchday: unknown game exe (link time %d): FM24 squads are not written", exe_stamp))
+    end
     if request then
         log(string.format("matchday: FM24 fixture %s v %s loaded", request.home or "?", request.away or "?"))
     else
@@ -424,7 +441,8 @@ function m.init(ctx)
     local cave, at = install_select_hook()
     local hf = io.open(dir .. "hooks.txt", "wb")
     if hf then
-        hf:write(string.format("version=%s\n", m.version))
+        hf:write(string.format("version=%s\ngame=%s\nexe_stamp=%d\n", m.version, exe and exe.game or "unknown",
+            exe_stamp))
         if cave then
             hf:write(string.format("select_cave=%s\nselect_at=%s\n", memory.hex(cave), memory.hex(at)))
         end

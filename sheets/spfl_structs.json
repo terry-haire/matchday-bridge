@@ -1,14 +1,5 @@
 [
  {
-  "id": "pes_eb_owner",
-  "struct": "EDIT_BLOCK",
-  "field": "owner_global",
-  "offset": "0x143705e10",
-  "type": "ptr",
-  "meaning": "[global]+0x48 = edit block (no ASLR)",
-  "verified": "SPFL26 FL_2026.exe 26.2.0.3 live 2026-10-09: Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers; also Matozanato layout.json"
- },
- {
   "id": "pes_eb_team_count",
   "struct": "EDIT_BLOCK",
   "field": "team_count",

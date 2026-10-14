@@ -37,6 +37,7 @@ def log(s):
 ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
 root = tk.Tk()
 br = mb.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 md = json.load(open(os.path.join(ROOT, "tests", "sample_matchday.json"), encoding="utf-8"))
 md = {**md, "home": {**md["home"], "name": HOME, "short": HOME.split()[0], "human": False,
                      "club_id": CLUB_IDS.get(HOME)},
@@ -48,7 +49,7 @@ root.after(500, br.play)
 
 def poll():
     t = br.view.title_var.get()
-    if t in ("Your turn", "Pick the teams in SPFL26") or time.time() - T0 > 400:
+    if t in ("Your turn", "Pick the teams in Football Life 2026") or time.time() - T0 > 400:
         log(f"{t} | {br.view.body_var.get()[:100]} | {br.view.detail_var.get()[:120]}")
         log(f"loaded live: {br.live is not None}")
         shots = os.path.join(os.environ["LOCALAPPDATA"], "MatchdayBridge", "last_match")

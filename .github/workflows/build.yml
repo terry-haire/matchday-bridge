@@ -51,7 +51,7 @@ jobs:
           }
           if (Test-Path $log) { Get-Content $log -Tail 5 }
           $text = if (Test-Path $log) { Get-Content $log -Raw } else { '' }
-          if ($p.ExitCode -ne 0 -or $text -notmatch 'selftest: SPFL26 window' -or $text -match 'proxy MISSING') {
+          if ($p.ExitCode -ne 0 -or $text -notmatch 'selftest: game window' -or $text -match 'proxy MISSING') {
             throw "The self-test failed (exit code $($p.ExitCode))."
           }
 

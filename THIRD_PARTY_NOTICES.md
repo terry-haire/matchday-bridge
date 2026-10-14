@@ -1,7 +1,15 @@
 # Third-party notices
 
-Matchday Bridge ships no game files. Everything it gives SP Football Life 2026 is rebuilt at play time
-from your own SP Football Life 2026 install and your own Football Manager 2024 save.
+Matchday Bridge ships no game files. Everything it gives eFootball PES 2021 or SP Football Life 2026 is rebuilt
+at play time from your own game install and your own Football Manager 2024 save.
+
+## Sider 7 (pes-modding/sider7) — downloaded, not bundled
+
+For PES 2021, Matchday Bridge downloads the official Sider 7.4.1 release
+(https://github.com/pes-modding/sider7/releases/download/v7.4.1/sider-7.4.1.zip, SHA-256
+`67edb8fd3b188966cec990b0e50a222e0f88ba408ebb5db47526a33f24c6b390`) into the game folder on first use, unmodified
+except for its `sider.ini` settings. Sider is Copyright (c) 2014-2026, juce, nesa24, distributed under its own
+license (`sider\doc\license.txt` after the download). SP Football Life 2026 comes with its own Sider.
 
 ## Matozanato/FootballLife-new-leagues — MIT License
 
@@ -41,6 +49,8 @@ SOFTWARE.
   clubs that only have plain kits.
 - the4chancup/4cc-studio — PES 2021 database schema, used to cross-check table layouts.
 - pes-modding/sider7 — Sider 7 scripting documentation (`doc/scripting.html`, `modules/mstats.lua`).
+- CRI Middleware's CPK table scrambling (a public, widely documented XOR stream; the keystream is computed in
+  `bridge/fl26db.py`), needed to read the table of contents of Konami's own PES 2021 .cpk files.
 
 ## Bundled in MatchdayBridge.exe
 

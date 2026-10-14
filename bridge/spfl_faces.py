@@ -1,16 +1,17 @@
-"""Player faces in SP Football Life 2026 (from the player's own install; nothing is shipped).
+"""Player faces in PES 2021 / SP Football Life 2026 (from the player's own install; nothing is shipped).
 
-SPFL26 loads a player's real head by player id (Asset/model/character/face/real/<id>/) and his menu portrait from
-common/render/symbol/player/<id>.dds; players without the face folder get a generic head. SPFL26 builds a club's squad
-from the players registered at that club, so an FM24 player SPFL26 has at another club (or none) has to borrow one of
-this club's records, which has its own real face. lend_faces() serves the right files for the borrowed id from the
-LiveCPK match root: the FM24 player's own face and portrait when SPFL26 has him somewhere, else no portrait (a
+The game loads a player's real head by player id (Asset/model/character/face/real/<id>/) and his menu portrait from
+common/render/symbol/player/<id>.dds; players without the face folder get a generic head. The game builds a club's
+squad from the players registered at that club, so an FM24 player it has at another club (or none) has to borrow one
+of this club's records, which has its own real face. lend_faces() serves the right files for the borrowed id from the
+LiveCPK match root: the FM24 player's own face and portrait when the game has him somewhere, else no portrait (a
 transparent one) and, via matchday.lua, no real face for the borrowed id (generic head).
 real_face_ids() lists the ids with a real face (table-of-contents scan, ~2 s, cached until a .cpk or root changes).
 """
 from __future__ import annotations
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -20,8 +21,22 @@ from fl26db import cpk_path, cpk_row_data, cpk_toc, wesys_pack
 
 FACE = re.compile(r"character/face/real/(\d+)/", re.I)
 PORTRAIT = re.compile(r"render/symbol/player/(\d+)\.dds$", re.I)
-CACHE = os.path.join(os.environ.get("LOCALAPPDATA", "."), "MatchdayBridge", "real_faces.json")
+CACHE_DIR = os.path.join(os.environ.get("LOCALAPPDATA", "."), "MatchdayBridge")
 PORTRAIT_DIR = "common/render/symbol/player"
+
+
+def _cache(game_dir: str) -> str:
+    """One cache per game install (PES 2021 and SPFL26 have different faces)."""
+    tag = hashlib.sha1(os.path.normcase(os.path.abspath(game_dir)).encode()).hexdigest()[:10]
+    return os.path.join(CACHE_DIR, f"real_faces_{tag}.json")
+
+
+def sider_dir(game_dir: str) -> str:
+    """The game's Sider folder: SiderAddons (SP Football Life 2026) or sider (PES 2021)."""
+    for sub in ("SiderAddons", "sider"):
+        if os.path.exists(os.path.join(game_dir, sub, "sider.ini")):
+            return os.path.join(game_dir, sub)
+    return os.path.join(game_dir, "sider")
 
 
 def blank_portrait() -> bytes:
@@ -37,7 +52,7 @@ def blank_portrait() -> bytes:
 
 def _sources(game_dir: str) -> tuple[list[str], list[str]]:
     cpks = sorted(p for d in ("Data", "download") for p in glob.glob(os.path.join(game_dir, d, "*.cpk")))
-    sider = os.path.join(game_dir, "SiderAddons")
+    sider = sider_dir(game_dir)
     roots = []
     try:
         ini = open(os.path.join(sider, "sider.ini"), encoding="utf-8", errors="replace").read()
@@ -63,8 +78,9 @@ def _signature(cpks: list[str], roots: list[str]) -> list:
 def real_face_ids(game_dir: str) -> set[int]:
     cpks, roots = _sources(game_dir)
     sig = _signature(cpks, roots)
+    cache = _cache(game_dir)
     try:
-        cached = json.load(open(CACHE, encoding="utf-8"))
+        cached = json.load(open(cache, encoding="utf-8"))
         if cached.get("signature") == sig:
             return set(cached["ids"])
     except (OSError, ValueError, KeyError):
@@ -84,10 +100,10 @@ def real_face_ids(game_dir: str) -> set[int]:
         if os.path.isdir(d):
             ids.update(int(n) for n in os.listdir(d) if n.isdigit())
     try:
-        os.makedirs(os.path.dirname(CACHE), exist_ok=True)
-        with open(CACHE + ".tmp", "w", encoding="utf-8") as f:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(cache + ".tmp", "w", encoding="utf-8") as f:
             json.dump({"signature": sig, "ids": sorted(ids)}, f)
-        os.replace(CACHE + ".tmp", CACHE)
+        os.replace(cache + ".tmp", cache)
     except OSError:
         pass
     return ids

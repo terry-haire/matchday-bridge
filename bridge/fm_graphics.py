@@ -210,14 +210,17 @@ def crest_images(png: bytes | None, name: str, abbr: str = "") -> dict[str, byte
 
 
 def write_crests(root: str, team_id: int, images: dict[str, bytes]) -> list[str]:
-    """Both the licensed (_r) and generic (_f) names: which one SPFL26 asks for depends on the slot."""
+    """Both the licensed (_r) and generic (_f) names, plain and in the _b/_w (dark/light background) variants some
+    licensed clubs use instead (PES 2021: Manchester United has only e_000100_r_b*/_r_w*): which one the game asks
+    for depends on the slot."""
     d = os.path.join(root, "common", "render", "symbol", "flag")
     os.makedirs(d, exist_ok=True)
     written = []
     for kind in ("f", "r"):
-        for suffix, data in images.items():
-            p = os.path.join(d, f"e_{team_id:06d}_{kind}{suffix}.png")
-            with open(p, "wb") as f:
-                f.write(data)
-            written.append(p)
+        for variant in ("", "_b", "_w"):
+            for suffix, data in images.items():
+                p = os.path.join(d, f"e_{team_id:06d}_{kind}{variant}{suffix}.png")
+                with open(p, "wb") as f:
+                    f.write(data)
+                written.append(p)
     return written

@@ -332,6 +332,57 @@ First playable = that round trip + one missing club via a spare slot.
   rewritten, zero real-face loads for them in the tracer over two matches (fresh start and running game), every
   other face loaded; the team sheet shows no icon for Adrián, Matip, Pinnington, Miles, Davidson, Doak, Tsimikas.
 
+## eFootball PES 2021 (Steam) as the primary game (2026-10-14, user request)
+- Install: Steam app 1259970 (`appmanifest_1259970.acf`, folder `eFootball PES 2021`), PES2021.exe 1.07.02
+  (file version 1.7.2.1, PE link time 1652065230, May 2022), Data Pack 7.00. FL_2026.exe is a different build
+  (link time 1600050367 = Sep 2020), so no address carries over; both are packed (no usable code on disk).
+- This account runs **LITE**: window "eFootball PES 2021 LITE", saves in `Documents\KONAMI\eFootball PES 2021
+  LITE\<SteamID64>\save` (SPFL26: `...\eFootball PES 2021 SEASON UPDATE\2026\save`; first PES launch left every
+  SPFL26 save file byte-identical). LITE's Local Match = one list of five clubs, already confirmed (list widget
+  league[0], +0x9b = 1): 101 Arsenal, 108 FC Barcelona, 127 FC Bayern München, 120 Juventus, 100 Manchester United;
+  one stadium (Neu Sonne Arena). So `sheets/spfl_slots.json` pes2021 = those five as hosts; an FM24 club that is one
+  of them keeps its slot; team names in PES capitals. Team 1921 is a second "ARSENAL" (another competition).
+- Edit block: `[[0x1431a9228]+0x48]` (found from the "ARSENAL"/"ARS" team record: block = teams - 0xadf4bc, one
+  heap qword points at it, owner = that - 0x48, held by that exe global). Same layout as SPFL26: teams at +0xadf4bc
+  stride 0x690 (694), team_count +0xd0bcec, player_count +0xd0bce8 = 25,208, players at +0 stride 0x17c (ids +0x30,
+  names +0x38). `sheets/game_exes.json` maps PE link time -> owner global for matchday.lua (0.6.0) and the bridge.
+- Select Team hook: the SPFL signature `42 8d 04 11 41 89 00 80 bb 9b 00 00 00 00` is in PES2021.exe too
+  (+B8A58B); same widget layout. LITE's list starts confirmed: the first DOWN moves the club cursor (+0x64).
+- Menus (all OCR'd, background, controller 1 via the proxy): "Press Any Button" -> top menu = grid of unlabelled
+  icons (Match top-left; the panel title names the highlighted icon: "Kick Off / ... in various match types"; no
+  wrap, so UP*2 LEFT*4 lands on it) -> Match menu Local Match / Co-op / Training (highlight = white box; no wrap:
+  UP*3) -> side select and Select Team as SPFL26 -> pre-match (Uniform, Stadium, Kick Off, Game Plan, ...). Pause
+  menu: a carousel ending in Top Menu -> "Return to Top Menu?" Cancel | Return. Half time and full time menus end in
+  Top Menu too (full time: Highlights, Individual Match Records, Rematch (default), Select Team, Top Menu).
+  First match: a "Kicking Controls" help popup waits for A.
+- Database: Konami's own .cpk table headers are CRI-scrambled (XOR with the low bytes of 0x655F*0x4115^i), the
+  files inside are plain WESYS; priority list download/DpFileList.bin, later entry wins (as spFileList.bin).
+  Player.bin name slots: 0 = Japanese, 3 = "M. SALAH" (SPFL26: full name in 0), so FM24 names are also tried as
+  "initial. surname"; ages = 2020 - birth year (16/16 players checked; SPFL26 2025). 2,838 players with a real face.
+- Crests: licensed PES clubs may only have `e_<id>_r_b*` / `_r_w*` (Manchester United, Juventus): the bridge writes
+  _f, _r, _r_b and _r_w names. Verified: FM24 Oldham crest on Manchester United's slot.
+- Goal caption: under the scoreboard ("7 Arlo Brightwater / Today's Goals 1"), not bottom left: caption area
+  (40, 88, 420, 150) of 1280x720. Verified live: 4 of 4 goals read (research/job_pes_e2e.py).
+- Controller: Steam's gameoverlayrenderer64 inline-hooks every XInput export (the proxy's too) and its hook
+  answers without calling through, so the merge never ran (reads stuck at 1). The proxy now points the game's
+  import entries (and the packer's copy at 0x142184018) at non-exported wrappers that call the (hooked) export and
+  merge on top; Sider's own XInputGetState hook (`_hp_at_xinput`, replaces that holder) calls our wrapper. Without
+  Sider an unfocused PES 2021 does not poll XInput at all, so the bridge always runs it with Sider (restarting a
+  game started from Steam alone: sider.dll not in the process).
+- Sider: official 7.4.1 zip (SHA-256 67edb8fd...6b390, license allows unmodified redistribution, but it is
+  downloaded on first use instead). Default sider.ini already has `start.game = "steam://rungameid/1259970"` and
+  `exe.name = "\PES2021.exe"`; sider.exe exits once the game is hooked. The bridge starts it through explorer.exe
+  (un-elevated). netblock.lua replaces Konami's gate/stun host names with 0.0.0.0; Local Match works offline.
+  `match.minutes` > 0 makes Sider also require set_max_time/call_set_minutes, not found in 1.07.02: it then
+  installs no hooks at all (no LiveCPK, no Lua) without saying so. Hook cache (startup.cache): a fresh install
+  analyses the exe in ~3-10 s; matchday.lua is up ~10 s after the launch.
+- A Sider that comes up after the game read its database would leave the LiveCPK squads out, so after a fresh
+  start the bridge waits for a new hooks.txt and also writes the FM24 players into memory at Select Team.
+- Verified (research/job_pes.py, job_pes_e2e.py, Atlanta United v Oldham from tests/sample_matchday.json, Oldham =
+  human): cold start without a hook cache ~70 s to the pre-match screen, into the running game ~16-20 s, backing
+  out of a running match, a game started from Steam alone (restarted with Sider), live score, full time via Top
+  Menu -> final=1 -> the bridge's full-time state.
+
 ## Gotchas
 1. um's chocolatey ffmpeg lacked gfxcapture; `um win setup --force` + `UM_FFMPEG_WIN`.
 2. FM UI coordinates are logical (1706×960 client at 150% scaling); screenshots are physical pixels.
@@ -342,3 +393,5 @@ First playable = that round trip + one missing club via a spare slot.
 6. Killing fm.exe opens SI's crash_reporter, which blocks Steam relaunch until closed (never send).
 7. The bridge exe is uac_admin: one UAC prompt, then SPFL can be restarted/launched without more prompts.
 8. computer-use cannot click elevated windows (UIPI); drive them from the elevated runner.
+9. PES 2021 runs un-elevated (Steam starts it), so research/pes.py and the job_pes*.py scripts drive it without the
+   elevated runner. Don't press A on PES's replay viewer (it pauses it): START = End.

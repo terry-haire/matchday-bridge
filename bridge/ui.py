@@ -210,7 +210,8 @@ class Button(tk.Canvas):
 
 
 class View:
-    def __init__(self, root: tk.Tk, app: str, on_play, on_sim):
+    def __init__(self, root: tk.Tk, app: str, games, on_play, on_sim):
+        """games: the installed games' short names (PES 2021 first); on_play(i) plays the match in games[i]."""
         self.root = root
         try:
             self.s = max(1.0, root.winfo_fpixels("1i") / 96)
@@ -238,8 +239,8 @@ class View:
         brand = tk.Frame(head, bg=BG)
         brand.pack(side="left")
         tk.Label(brand, text="MATCHDAY BRIDGE", font=self.f["brand"], fg=TEXT, bg=BG).pack(anchor="w")
-        tk.Label(brand, text="Football Manager 2024  ×  SP Football Life 2026", font=self.f["sub"], fg=MUTED,
-                 bg=BG).pack(anchor="w")
+        tk.Label(brand, text="Football Manager 2024  ×  " + ("  ·  ".join(games) or "PES 2021  ·  Football Life 2026"),
+                 font=self.f["sub"], fg=MUTED, bg=BG).pack(anchor="w")
         self.pill = tk.Canvas(head, width=S(190), height=S(30), bg=BG, highlightthickness=0)
         self.pill.pack(side="right")
         self._pill = ("Starting", "idle")
@@ -268,8 +269,13 @@ class View:
 
         bar = tk.Frame(root, bg=BG, height=S(48))
         bar.pack(fill="x", padx=S(24), pady=(S(10), S(8)))
-        self.play_btn = Button(bar, "▶  Play in SPFL26", on_play, "primary", 250, 48, self.s, self.f)
-        self.sim_btn = Button(bar, "Let FM24 simulate", on_sim, "ghost", 200, 48, self.s, self.f)
+        two = len(games) > 1
+        self.play_btns = [Button(bar, f"▶  {'' if two else 'Play in '}{g}", (lambda i=i: on_play(i)),
+                                 "primary" if i == 0 else "ghost", (190 if i == 0 else 230) if two else 250, 48,
+                                 self.s, self.f)
+                          for i, g in enumerate(games)]
+        self.play_btn = self.play_btns[0] if self.play_btns else None
+        self.sim_btn = Button(bar, "Let FM24 simulate", on_sim, "ghost", 170 if two else 200, 48, self.s, self.f)
 
         foot = tk.Frame(root, bg=BG)
         foot.pack(fill="x", side="bottom", padx=S(24), pady=(0, S(12)))
@@ -360,13 +366,16 @@ class View:
         self.foot_var.set(text)
 
     def buttons(self, play: bool, sim: bool):
-        self.play_btn.set_enabled(play)
+        for b in self.play_btns:
+            b.set_enabled(play)
         self.sim_btn.set_enabled(sim)
         if play or sim:
-            self.play_btn.pack(side="left")
+            for i, b in enumerate(self.play_btns):
+                b.pack(side="left", padx=(self.S(10) if i else 0, 0))
             self.sim_btn.pack(side="left", padx=(self.S(12), 0))
         else:
-            self.play_btn.pack_forget()
+            for b in self.play_btns:
+                b.pack_forget()
             self.sim_btn.pack_forget()
 
     # ------------------------------------------------------------------ drawing
@@ -493,9 +502,9 @@ class ChoiceDialog:
     dimmed by a translucent overlay (and disabled by the caller) until one of the two buttons is pressed.
 
     teams: [{"name", "abbr", "human", "logo": PIL image or None}] home, away. rect: FM's window (x0, y0, x1, y1)
-    in screen pixels."""
+    in screen pixels. games: names of the games it can be played in (first = the highlighted one); on_play(i)."""
 
-    def __init__(self, root: tk.Tk, rect, teams, comp: str, on_play, on_sim):
+    def __init__(self, root: tk.Tk, rect, teams, comp: str, games, on_play, on_sim):
         self.root, self.done = root, False
         self.on_play, self.on_sim = on_play, on_sim
         x0, y0, x1, y1 = rect
@@ -515,7 +524,7 @@ class ChoiceDialog:
         self.shade.attributes("-alpha", 0.6, "-topmost", True)
         self.shade.geometry(f"{x1 - x0}x{y1 - y0}+{x0}+{y0}")
 
-        w, h = S(620), S(360)
+        w, h = S(720 if len(games) > 1 else 620), S(360)
         self.win = tk.Toplevel(root)
         self.win.overrideredirect(True)
         self.win.configure(bg="#000000")
@@ -553,18 +562,24 @@ class ChoiceDialog:
                 sm.rrect(c, cx - S(26), S(212), cx + S(26), S(230), S(9), fill=GREEN_LO, outline=GREEN, width=1)
                 c.create_text(cx, S(221), text="YOU", fill=GREEN_HI, font=f["you"])
         c.create_text(w / 2, S(132), text="VS", fill=DIM, font=f["vs"])
-        c.create_text(w / 2, S(256), text="SP Football Life 2026: you play it, FM24 plays its own match meanwhile and "
-                      "takes your score and scorers.", fill=MUTED, font=f["body"], width=w - S(80), justify="center")
+        c.create_text(w / 2, S(256), text=f"Play it yourself in {' or '.join(games)}: FM24 plays its own match "
+                      "meanwhile and takes your score and scorers.", fill=MUTED, font=f["body"], width=w - S(80),
+                      justify="center")
         bar = tk.Frame(self.win, bg=CARD)
         c.create_window(w / 2, S(316), window=bar)
         fonts = {"button": f["button"]}
-        Button(bar, "▶  Play in SP Football Life 2026", self._play, "primary", 300, 46, s, fonts).pack(side="left")
-        Button(bar, "Simulate in FM24", self._sim, "ghost", 190, 46, s, fonts).pack(side="left", padx=(S(12), 0))
+        two = len(games) > 1
+        for i, g in enumerate(games):
+            Button(bar, f"▶  {g}" if two else f"▶  Play in {g}", (lambda i=i: self._play(i)),
+                   "primary" if i == 0 else "ghost", 230 if two else 300, 46, s, fonts).pack(
+                side="left", padx=(S(10) if i else 0, 0))
+        Button(bar, "Simulate in FM24", self._sim, "ghost", 180 if two else 190, 46, s, fonts).pack(
+            side="left", padx=(S(12), 0))
         bar.configure(bg=CARD)
         for b in bar.winfo_children():
             b.configure(bg=CARD)
             b._draw()
-        self.win.bind("<Return>", lambda e: self._play())
+        self.win.bind("<Return>", lambda e: self._play(0))
         self.win.bind("<Escape>", lambda e: self._sim())
         self.raise_()
 
@@ -589,10 +604,10 @@ class ChoiceDialog:
             except tk.TclError:
                 pass
 
-    def _play(self):
+    def _play(self, i: int = 0):
         if not self.done:
             self.close()
-            self.on_play()
+            self.on_play(i)
 
     def _sim(self):
         if not self.done:

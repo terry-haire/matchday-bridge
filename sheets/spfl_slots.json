@@ -5,7 +5,8 @@
   "original_name": "Zalgiris Vilnius",
   "menu_group": "Other European Leagues",
   "why": "real club in no SPFL26 competition, 26 players; only plain kit definitions (199_DEF_1st.bin, no _realUni) = the game's generic editable kit, no crest/sponsor textures; Team.bin +0x4f nibble 2",
-  "verified": "SPFL26 2.2.0 live 2026-10-09: Team.bin rename shows 'Oldham Athletic' under Other European Leagues; UniformParameter.bin (data_s25262b) 2026-10-10: 199 has 1st/2nd/GK1st plain only"
+  "verified": "SPFL26 2.2.0 live 2026-10-09: Team.bin rename shows 'Oldham Athletic' under Other European Leagues; UniformParameter.bin (data_s25262b) 2026-10-10: 199 has 1st/2nd/GK1st plain only",
+  "game": "spfl26"
  },
  {
   "id": "spare_slot_2",
@@ -13,7 +14,8 @@
   "original_name": "Ceres Negros",
   "menu_group": "Other Clubs (Asia)",
   "why": "in no competition, 23 players, plain kits only; listed under Other Clubs (Asia) (+0x4f nibble 3). Writing nibble 2 into the match Team.bin did NOT move it to Other European Leagues (live test 2026-10-10: not in that list), and the live edit-block team records hold no such field, so the bridge picks it from its own group",
-  "verified": "UniformParameter.bin 2026-10-10: 200 has 1st/2nd/GK1st plain only"
+  "verified": "UniformParameter.bin 2026-10-10: 200 has 1st/2nd/GK1st plain only",
+  "game": "spfl26"
  },
  {
   "id": "spare_slot_3",
@@ -21,6 +23,52 @@
   "original_name": "Zamora FC",
   "menu_group": "Other Latin American Teams",
   "why": "third choice, only when an FM club is one of the slots above; 24 players, plain kits only; nibble 6 = Other Latin American Teams",
-  "verified": "UniformParameter.bin 2026-10-10: 899 has 1st/2nd/GK1st plain only"
+  "verified": "UniformParameter.bin 2026-10-10: 899 has 1st/2nd/GK1st plain only",
+  "game": "spfl26"
+ },
+ {
+  "id": "pes2021_host_1",
+  "game": "pes2021",
+  "team_id": 100,
+  "original_name": "Manchester United",
+  "menu_group": "Local Match (the only list)",
+  "why": "PES 2021 LITE's Local Match lists only these five clubs (one list, read live from the Select Team widget 2026-10-14: 101, 108, 127, 120, 100), so every FM24 club PES 2021 cannot pick plays in one of them; real kits, the human club takes the first free one every match day",
+  "verified": "PES 2021 1.07.02 LITE live 2026-10-14: list widget league[0] clubs [101, 108, 127, 120, 100]"
+ },
+ {
+  "id": "pes2021_host_2",
+  "game": "pes2021",
+  "team_id": 101,
+  "original_name": "Arsenal",
+  "menu_group": "Local Match (the only list)",
+  "why": "PES 2021 LITE's Local Match lists only these five clubs (one list, read live from the Select Team widget 2026-10-14: 101, 108, 127, 120, 100), so every FM24 club PES 2021 cannot pick plays in one of them; real kits, the human club takes the first free one every match day",
+  "verified": "PES 2021 1.07.02 LITE live 2026-10-14: list widget league[0] clubs [101, 108, 127, 120, 100]"
+ },
+ {
+  "id": "pes2021_host_3",
+  "game": "pes2021",
+  "team_id": 127,
+  "original_name": "FC Bayern München",
+  "menu_group": "Local Match (the only list)",
+  "why": "PES 2021 LITE's Local Match lists only these five clubs (one list, read live from the Select Team widget 2026-10-14: 101, 108, 127, 120, 100), so every FM24 club PES 2021 cannot pick plays in one of them; real kits, the human club takes the first free one every match day",
+  "verified": "PES 2021 1.07.02 LITE live 2026-10-14: list widget league[0] clubs [101, 108, 127, 120, 100]"
+ },
+ {
+  "id": "pes2021_host_4",
+  "game": "pes2021",
+  "team_id": 108,
+  "original_name": "FC Barcelona",
+  "menu_group": "Local Match (the only list)",
+  "why": "PES 2021 LITE's Local Match lists only these five clubs (one list, read live from the Select Team widget 2026-10-14: 101, 108, 127, 120, 100), so every FM24 club PES 2021 cannot pick plays in one of them; real kits, the human club takes the first free one every match day",
+  "verified": "PES 2021 1.07.02 LITE live 2026-10-14: list widget league[0] clubs [101, 108, 127, 120, 100]"
+ },
+ {
+  "id": "pes2021_host_5",
+  "game": "pes2021",
+  "team_id": 120,
+  "original_name": "Juventus",
+  "menu_group": "Local Match (the only list)",
+  "why": "PES 2021 LITE's Local Match lists only these five clubs (one list, read live from the Select Team widget 2026-10-14: 101, 108, 127, 120, 100), so every FM24 club PES 2021 cannot pick plays in one of them; real kits, the human club takes the first free one every match day",
+  "verified": "PES 2021 1.07.02 LITE live 2026-10-14: list widget league[0] clubs [101, 108, 127, 120, 100]"
  }
 ]

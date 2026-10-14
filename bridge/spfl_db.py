@@ -17,15 +17,16 @@ COMP_REC, REG_REC, ENTRY_REC = 36, 2352, 12
 
 
 def cpk_priority(game_dir: str) -> list[str]:
-    """CPK file names from download/spFileList.bin, highest precedence first (lowest order number wins)."""
-    d = open(os.path.join(game_dir, "download", "spFileList.bin"), "rb").read()
-    out = []
-    for m in re.finditer(rb"([0-9A-Za-z_\-]+\.cpk)", d):
-        o = m.start()
-        order = struct.unpack_from("<I", d, o - 12)[0]
-        out.append((order, m.group(1).decode()))
-    out.sort()
-    return [n for _, n in out]
+    """CPK file names of the game's download list, highest precedence first. SP Football Life 2026 reads
+    download/spFileList.bin, PES 2021 download/DpFileList.bin; in both a later entry overrides the earlier ones
+    (Data Pack 7.0 after 1.0; SPFL's own order numbers count down the same way). Entries are 0x30 bytes from +8:
+    u32, u32, name."""
+    for name in ("spFileList.bin", "DpFileList.bin"):
+        p = os.path.join(game_dir, "download", name)
+        if os.path.exists(p):
+            break
+    d = open(p, "rb").read()
+    return [m.group(1).decode() for m in re.finditer(rb"([0-9A-Za-z_\-]+\.cpk)", d)][::-1]
 
 
 def effective_table(game_dir: str, table: str, livecpk_roots: list[str] | None = None) -> tuple[bytes, str]:

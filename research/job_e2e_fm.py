@@ -43,6 +43,7 @@ log("FM on Pep Talk")
 
 root = tk.Tk()
 br = M.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 state = {"phase": "wait-arm"}
 
 
@@ -66,8 +67,8 @@ def harness():
         log(f"choice dialog open; FM input enabled = {bool(ctypes.windll.user32.IsWindowEnabled(br.fm_ui.h))}")
         time.sleep(2)
         snap("1_choice")
-        root.after(0, lambda: br.dialog._play())
-        while br.view.title_var.get() not in ("Your turn", "Pick the teams in SPFL26"):
+        root.after(0, lambda: br.dialog._play(br.games.index(br.game)))
+        while br.view.title_var.get() not in ("Your turn", "Pick the teams in Football Life 2026"):
             time.sleep(1)
             if time.time() - T0 > 900:
                 raise TimeoutError("SPFL setup did not finish")

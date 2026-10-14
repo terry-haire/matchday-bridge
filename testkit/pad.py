@@ -57,7 +57,7 @@ def build() -> str:
     if os.path.exists(DLL) and os.path.getmtime(DLL) >= max(os.path.getmtime(c), os.path.getmtime(d)):
         return DLL
     cmd = ["clang", "-shared", "-O2", "-Wall", "-ffreestanding", "-nostdlib", "-fno-stack-protector",
-           "-o", DLL, c, f"-Wl,/DEF:{d}", "-Wl,/NOENTRY", "-lkernel32"]
+           "-o", DLL, c, f"-Wl,/DEF:{d}", "-Wl,/ENTRY:DllMain", "-lkernel32"]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode:
         raise RuntimeError(f"clang failed:\n{r.stdout}{r.stderr}")

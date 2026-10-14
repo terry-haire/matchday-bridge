@@ -229,7 +229,6 @@ PES_LIVE_FIELDS = {  # name: (bit, width) in a live edit-block player record; ho
 }
 
 class SPFL_EDIT_BLOCK:
-    OWNER_GLOBAL = 0x143705e10  # ptr: [global]+0x48 = edit block (no ASLR)
     TEAM_COUNT = 0xd0bcec  # u32: teams in use (749)
     PLAYER_COUNT = 0xd0bce8  # u32: players in use; grew 29492->29524 with our 32 new players
     TEAMS = 0xadf4bc  # TEAM_REC[stride 0x690]: team records
@@ -293,8 +292,22 @@ FM_POSITION_SLOTS = [  # FM position-rating slot index -> (FM code, PES position
     ('WBR', 'RB'),
 ]
 
-SPARE_SLOTS = [  # SPFL26 team ids lent to clubs SPFL26 does not have, in order of use
-    199,  # Zalgiris Vilnius
-    200,  # Ceres Negros
-    899,  # Zamora FC
-]
+SPARE_SLOTS = {  # game: team ids lent to clubs the game cannot pick, in order of use
+    'spfl26': [
+        199,  # Zalgiris Vilnius
+        200,  # Ceres Negros
+        899,  # Zamora FC
+    ],
+    'pes2021': [
+        100,  # Manchester United
+        101,  # Arsenal
+        127,  # FC Bayern München
+        108,  # FC Barcelona
+        120,  # Juventus
+    ],
+}
+
+GAME_EXES = {  # PE link timestamp of the game exe: (game, edit block owner global: [[global]+0x48])
+    1600050367: ('spfl26', 0x143705e10),  # FL_2026.exe 26.2.0.3 (SP Football Life 2026 2.2.0)
+    1652065230: ('pes2021', 0x1431a9228),  # PES2021.exe 1.07.02 (file version 1.7.2.1), Data Pack 7.00, Steam app 1259970 (LITE and SEASON UPDATE share the exe)
+}

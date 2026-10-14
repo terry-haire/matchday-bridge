@@ -24,6 +24,9 @@ def read_with_caption(lines, side):
 
 def test_caption_reader():
     assert read_with_caption(["47 Ryan Harris", "GOAL 1"], 1)["fm_pid"] == 247
+    # PES 2021's caption under its scoreboard (OCR of a real goal, 2026-10-14)
+    assert read_with_caption(["9 Tim Penfold", "Today's Goals", "1"], 0)["fm_pid"] == 109
+    assert read_with_caption(["Today's Goals", "' rEO", "1"], 0) is None
     og = read_with_caption(["5 Juan Torres", "OWN GOAL"], 1)          # away goal, home player's own goal
     assert og["own_goal"] and og["fm_pid"] == 105, og
     og = read_with_caption(["4 Emili Illa OWN GOAL"], 0)

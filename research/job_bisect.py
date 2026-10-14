@@ -14,6 +14,7 @@ sys.path.insert(1, os.path.join(ROOT, "testkit"))
 import install  # noqa: E402
 import spfl  # noqa: E402
 from fm_reader import FmReader  # noqa: E402
+from games import owner_global  # noqa: E402
 from gen_structs import SPFL_EDIT_BLOCK as EB, SPFL_TEAM_REC as TR  # noqa: E402
 from procmem import Proc  # noqa: E402
 from spfl_build import MatchBuilder  # noqa: E402
@@ -81,7 +82,7 @@ def try_rosters(tag, rosters):
     ensure_game()
     p = Proc("FL_2026.exe", write=True)
     try:
-        blk = p.u64(p.u64(EB.OWNER_GLOBAL) + 0x48)
+        blk = p.u64(p.u64(owner_global(p)[1]) + 0x48)
         for t, ids in rosters.items():
             write_roster(p, team_addr(p, blk, t), ids, list(range(1, len(ids) + 1)))
     finally:

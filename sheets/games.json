@@ -12,6 +12,18 @@
   "verified": "um scan: anti-cheat none; PE sections .arch/.xtls = Denuvo; RTTI classes resolved live"
  },
  {
+  "id": "pes2021",
+  "name": "eFootball PES 2021 (SEASON UPDATE / free LITE)",
+  "role": "guest (plays the matches), primary",
+  "store": "Steam app 1259970 (LITE and SEASON UPDATE share the app and exe)",
+  "locate": "Steam libraryfolders.vdf -> steamapps/common/eFootball PES 2021",
+  "exe": "PES2021.exe",
+  "version": "1.07.02 (file version 1.7.2.1), Data Pack 7.00",
+  "engine": "Konami Fox Engine, C++; packed exe (no ASLR, image base 0x140000000)",
+  "mod_route": "Sider 7.4.1 (official release, downloaded by the bridge into <game>/sider) + matchday.lua; LITE: only five Local Match clubs, used as host slots",
+  "verified": "live 2026-10-14 (LITE): sider.log 'Sider DLL: version 7.4.1', matchday.lua 0.6.0 'game pes2021', edit block [[0x1431a9228]+0x48]"
+ },
+ {
   "id": "spfl26",
   "name": "SP Football Life 2026",
   "role": "guest (plays the matches)",

@@ -1,0 +1,20 @@
+[
+ {
+  "id": "exe_spfl26_26_2_0_3",
+  "game": "spfl26",
+  "exe": "FL_2026.exe",
+  "version": "26.2.0.3 (SP Football Life 2026 2.2.0)",
+  "pe_timestamp": 1600050367,
+  "owner_global": "0x143705e10",
+  "verified": "live 2026-10-09: [[0x143705e10]+0x48] = edit block; Atlanta (slot 670) and Zalgiris/Oldham (slot 139) records match PlayerAssignment order and shirt numbers"
+ },
+ {
+  "id": "exe_pes2021_1_07_02",
+  "game": "pes2021",
+  "exe": "PES2021.exe",
+  "version": "1.07.02 (file version 1.7.2.1), Data Pack 7.00, Steam app 1259970 (LITE and SEASON UPDATE share the exe)",
+  "pe_timestamp": 1652065230,
+  "owner_global": "0x1431a9228",
+  "verified": "live 2026-10-14 (LITE): [[0x1431a9228]+0x48] = edit block with the SPFL26 layout: 694 teams at +0xadf4bc stride 0x690 (101 'ARSENAL'/'ARS'), team_count +0xd0bcec, player_count +0xd0bce8 = 25208, players at +0 stride 0x17c (557 'PARK JI-SUNG')"
+ }
+]

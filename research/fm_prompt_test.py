@@ -65,7 +65,8 @@ r = ctypes.wintypes.RECT()
 ctypes.windll.user32.GetWindowRect(ui.window(), ctypes.byref(r))
 ui.enable(False)
 chosen = []
-d = ChoiceDialog(root, (r.left, r.top, r.right, r.bottom), teams, "FM24", lambda: chosen.append("spfl"),
+d = ChoiceDialog(root, (r.left, r.top, r.right, r.bottom), teams, "FM24", ["PES 2021", "Football Life 2026"],
+                 lambda i: chosen.append(("pes", "spfl")[i]),
                  lambda: chosen.append("fm"))
 
 

@@ -53,13 +53,14 @@ log_mark = os.path.getsize(SIDER_LOG)
 spfl.set_test(match_minutes=2, extra_time=0, penalties=0)
 root = tk.Tk()
 br = mb.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 br.matchday = md
 root.after(300, br.play)
 
 
 def poll():
     t = br.view.title_var.get()
-    if t in ("Your turn", "Pick the teams in SPFL26") or time.time() - T0 > 400:
+    if t in ("Your turn", "Pick the teams in Football Life 2026") or time.time() - T0 > 400:
         log(f"bridge: {t} | live load: {br.live is not None} | plan home {br.plan['home']['spfl_name']} "
             f"({br.plan['home']['spfl_team']}), away {br.plan['away']['spfl_name']} ({br.plan['away']['spfl_team']})")
         root.after(300, root.quit)

@@ -1,7 +1,8 @@
-"""Builds the per-match SPFL26 database from an FM24 match day and writes it to a LiveCPK root.
+"""Builds the per-match database (PES 2021 or SPFL26) from an FM24 match day and writes it to a LiveCPK root.
 
-Nothing from either game is shipped: the tables are read from the player's SPFL26 install and rewritten
-with the FM24 squads the bridge just read from FM24's memory.
+Nothing from either game is shipped: the tables are read from the player's own game install and rewritten
+with the FM24 squads the bridge just read from FM24's memory. Both games share the PES 2021 formats; "SPFL" in
+names below means either.
 """
 from __future__ import annotations
 
@@ -20,12 +21,24 @@ from spfl_db import PesDb
 TEAM_ABBR_OFF, TEAM_ABBR_LEN = 0x372, 3
 PLAYER_CAP = 30001  # unpatched FL26 player array (Matozanato/FootballLife-new-leagues docs)
 SPFL_AGE_YEAR = 2025  # SPFL26 2.2 ages: birth year + age = 2025 for 32 of 38 FM24 players checked (2024 for the rest)
+PES_AGE_YEAR = 2020   # PES 2021 Data Pack 7.0: birth year + age = 2020 for 16 of 16 known players
+NAME_SLOTS = (0, 3)   # Player.bin names: SPFL26 full name in 0 (and 3); PES 2021 Japanese in 0, "M. SALAH" in 3
 
 
 def norm(s: str) -> str:
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
     s = re.sub(r"\b(fc|cf|afc|sc|ac|club|de|the)\b", " ", s)
     return re.sub(r"[^a-z0-9]+", " ", s).strip()
+
+
+def name_keys(pl: dict) -> tuple[set[str], set[str]]:
+    """(full-name keys, initial keys) an FM24 player may be filed under: "Dean Henderson" / "Alisson", and PES 2021's
+    "D. HENDERSON" style (tried only when no full name matches)."""
+    first, last = (pl.get("first") or "").strip(), (pl.get("last") or "").strip()
+    full = {norm(pl.get("name", "")), norm(pl.get("common", "")), norm(f"{first} {last}")}
+    initial = {norm(f"{first[0]} {last}")} if first and last else set()
+    full.discard("")
+    return full, initial - full
 
 
 # FM24 and SPFL26 write some clubs differently: "Galatasaray A.Ş." / "Galatasaray SK", "Almería" / "UD Almería",
@@ -136,14 +149,23 @@ def write_live_player(rec: bytearray, pl: dict, match_date: datetime.date):
 
 
 class MatchBuilder:
-    def __init__(self, db: PesDb, real_faces: set[int] | None = None):
-        """real_faces: SPFL26 player ids with a real head (spfl_faces); None = unknown (records are lent as before)."""
+    def __init__(self, db: PesDb, real_faces: set[int] | None = None, game: str = "spfl26"):
+        """real_faces: player ids with a real head (spfl_faces); None = unknown (records are lent as before).
+        game: "spfl26" or "pes2021" (PES 2021's Local Match can only pick its spare slots, the five LITE clubs)."""
         self.db = db
         self.real_faces = real_faces
+        self.game = game
+        self.spare_slots = SPARE_SLOTS[game]
+        self.hosts_only = game == "pes2021"
+        self.upper_names = game == "pes2021"
+        self.age_year = PES_AGE_YEAR if game == "pes2021" else SPFL_AGE_YEAR
         self.by_name: dict[str, list[int]] = {}
         for pid, i in db.player_index.items():
-            nm = db.player[i + PLAYER_NAME_OFF:i + PLAYER_NAME_OFF + 0x3D].split(b"\0")[0].decode("utf-8", "replace")
-            self.by_name.setdefault(norm(nm), []).append(pid)
+            for k in NAME_SLOTS:
+                o = i + PLAYER_NAME_OFF + k * 0x3D
+                key = norm(db.player[o:o + 0x3D].split(b"\0")[0].decode("utf-8", "replace"))
+                if key and pid not in self.by_name.get(key, ()):
+                    self.by_name.setdefault(key, []).append(pid)
         self.teams_of: dict[int, set[int]] = {}
         for i in range(0, len(db.assign), ASSIGN_REC):
             _, pid, tid, _ = struct.unpack_from("<IIII", db.assign, i)
@@ -166,7 +188,17 @@ class MatchBuilder:
         self.blank_portraits: set[int] = set()     # borrowed records of FM24 players SPFL26 does not have
 
     def find_team(self, fm_team: dict) -> int | None:
+        tid = self._find_team(fm_team)
+        if self.hosts_only and tid not in self.spare_slots:
+            return None                                     # in the game's database, but Local Match can't pick it
+        return tid
+
+    def _find_team(self, fm_team: dict) -> int | None:
         name, short = fm_team["name"], fm_team.get("short", "")
+        if self.hosts_only:
+            for tid in self.spare_slots:                    # PES 2021 has "ARSENAL" twice: the Local Match one counts
+                if tid in self.db.team_index and norm(self.db.team_name(tid)) in (norm(name), norm(short)):
+                    return tid
         for key in (name, short):
             tid = self.team_by_name.get(norm(key))
             if tid:
@@ -215,8 +247,9 @@ class MatchBuilder:
         db = self.db
         if rename:
             i = db.team_index[team_id]
+            name = fm_team["name"].upper() if self.upper_names else fm_team["name"]
             db.team[i + TEAM_NAME_OFF:i + TEAM_NAME_OFF + TEAM_NAME_LEN] = \
-                fm_team["name"].encode("utf-8")[:TEAM_NAME_LEN - 1].ljust(TEAM_NAME_LEN, b"\0")
+                name.encode("utf-8")[:TEAM_NAME_LEN - 1].ljust(TEAM_NAME_LEN, b"\0")
             abbr = re.sub(r"[^A-Z]", "", fm_team.get("short", fm_team["name"]).upper())[:3] or "FMC"
             db.team[i + TEAM_ABBR_OFF:i + TEAM_ABBR_OFF + TEAM_ABBR_LEN] = abbr.encode().ljust(3, b"\0")
         pool = [r["player"] for r in db.assignments(team_id)]
@@ -227,7 +260,7 @@ class MatchBuilder:
             self.log.append(f"{fm_team['name']}: SPFL slot only has {len(pool)} players, dropped the last subs")
         chosen: dict[int, tuple[int, str]] = {}
         for k, pl in enumerate(squad):
-            own = [] if rename else [p for p in self.by_name.get(norm(pl["name"]), []) if p in pool and p not in self.used]
+            own = [] if rename else [p for p in self._named(pl) if p in pool and p not in self.used]
             if own:
                 chosen[k] = (own[0], "own SPFL record")
                 self.used.add(own[0])
@@ -273,13 +306,22 @@ class MatchBuilder:
         if not pl.get("dob"):
             return True
         bit, width, add = PES_PLAYER_FIELDS["Age"]
-        born = SPFL_AGE_YEAR - (getbits(self.db.player_rec(pid), bit, width) + add)
+        born = self.age_year - (getbits(self.db.player_rec(pid), bit, width) + add)
         return abs(int(pl["dob"][:4]) - born) <= 1
 
+    def _named(self, pl: dict) -> list[int]:
+        """Records filed under one of the FM24 player's names (an "initial. surname" one only if no full name is)."""
+        full, initial = name_keys(pl)
+        for keys in (full, initial):
+            ids = [p for key in sorted(keys) for p in self.by_name.get(key, [])]
+            if ids:
+                return list(dict.fromkeys(ids))
+        return []
+
     def _record_elsewhere(self, pl: dict, pool: list[int]) -> int | None:
-        """The FM24 player's SPFL26 record at another club (or none): the only record of that name with his birth
-        year (+/- 1)."""
-        cands = [p for p in self.by_name.get(norm(pl["name"]), []) if p not in pool and self._age_ok(p, pl)]
+        """The FM24 player's record at another club (or none): the only record of his name with his birth year
+        (+/- 1)."""
+        cands = [p for p in self._named(pl) if p not in pool and self._age_ok(p, pl)]
         return cands[0] if len(cands) == 1 else None
 
     def _is_gk(self, pid: int) -> bool:
@@ -310,25 +352,26 @@ class MatchBuilder:
         found = {side: self.find_team(md[side]) for side in ("home", "away")}
         if found["home"] is not None and found["home"] == found["away"]:
             found["away"] = None                       # two FM clubs with the same name: lend the away one a slot
-        spares = [t for t in SPARE_SLOTS if t in self.db.team_index and t not in found.values()]
-        # A spare slot's plain kits belong to the slot, so the human club takes the first spare every match day
+        spares = [t for t in self.spare_slots if t in self.db.team_index and t not in found.values()]
+        # A spare slot's kits belong to the slot, so the human club takes the first spare every match day
         # (same kits each time) and the opponent the next one, whichever side either of them plays on.
         slot = {}
         for side in sorted((s for s in ("home", "away") if found[s] is None), key=lambda s: not md[s].get("human")):
             if not spares:
-                raise RuntimeError("both clubs are missing from SPFL26 and no spare slot is left")
+                raise RuntimeError("both clubs are missing from the game and no spare slot is left")
             slot[side] = spares.pop(0)
         teams = {side: slot[side] if side in slot else found[side] for side in ("home", "away")}
         for side in ("home", "away"):
             fm_team = md[side]
             rename = side in slot
             tid = teams[side]
+            slot_name = self.db.team_name(tid)
             ids, shirts, info = self.put_squad(tid, fm_team, match_date, rename, frozenset(teams.values()))
-            league = self.db.menu_league(tid)
+            league = "" if self.hosts_only else self.db.menu_league(tid)
             abbr = re.sub(r"[^A-Z]", "", fm_team.get("short", fm_team["name"]).upper())[:3] if rename else ""
             plan[side] = {"fm_name": fm_team["name"], "spfl_team": tid, "spfl_name": self.db.team_name(tid),
-                          "spare_slot": rename, "ids": ids, "shirts": shirts, "abbr": abbr, "players": info,
-                          "league": league, "human": bool(fm_team.get("human")),
+                          "spare_slot": rename, "slot_name": slot_name, "ids": ids, "shirts": shirts, "abbr": abbr,
+                          "players": info, "league": league, "human": bool(fm_team.get("human")),
                           "noface": [pid for pid in ids if pid in self.hidden_faces]}
         return plan
 
@@ -346,12 +389,13 @@ def request_lines(md: dict, plan: dict, comp: str, date: str) -> str:
         pl = plan[side]
         req[f"{side}_spfl"] = pl["spfl_name"]
         req[f"{side}_league"] = pl.get("league", "")
+        req[f"{side}_where"] = f" ({pl['league']})" if pl.get("league") else ""
         req[f"{side}_tid"] = pl["spfl_team"]
         req[f"{side}_ids"] = ",".join(str(x) for x in pl["ids"])
         req[f"{side}_shirts"] = ",".join(str(x) for x in pl["shirts"])
         if pl.get("noface"):
             req[f"{side}_noface"] = ",".join(str(x) for x in pl["noface"])
         if pl["spare_slot"]:
-            req[f"{side}_rename"] = pl["fm_name"]
+            req[f"{side}_rename"] = pl["spfl_name"]
             req[f"{side}_abbr"] = pl["abbr"]
     return "".join(f"{k}={v}\n" for k, v in req.items())

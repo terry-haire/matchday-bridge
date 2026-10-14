@@ -69,7 +69,7 @@ def run(n):
 
     def poll():
         t = br.view.title_var.get()
-        if (t in ("Your turn", "Pick the teams in SPFL26") and time.time() - state["t"] > 3) or \
+        if (t in ("Your turn", "Pick the teams in Football Life 2026") and time.time() - state["t"] > 3) or \
                 time.time() - state["t"] > 420:
             state["title"] = t
             root.after(300, root.quit)
@@ -137,6 +137,7 @@ time.sleep(3)
 spfl.set_test(match_minutes=2, extra_time=0, penalties=0)
 root = tk.Tk()
 br = mb.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 results = []
 try:
     results.append(run(1))

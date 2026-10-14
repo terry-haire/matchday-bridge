@@ -13,7 +13,7 @@ import ui  # noqa: E402
 ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))   # like the app: physical pixels
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shots")
 root = tk.Tk()
-v = ui.View(root, "Matchday Bridge", lambda: None, lambda: None)
+v = ui.View(root, "Matchday Bridge", ["PES 2021", "Football Life 2026"], lambda i: None, lambda: None)
 v.footer("Log  " + os.path.join(os.environ.get("LOCALAPPDATA", ""), "MatchdayBridge", "bridge.log"))
 root.geometry("+80+80")
 H = {"name": "Birmingham Legion", "abbr": "BIR"}
@@ -69,13 +69,14 @@ shot("5_saved")
 v.step(2, True)
 v.status("Pick the teams yourself", "warn")
 v.score(None, None)
-v.message("Pick the teams in SPFL26", "Pick Birmingham Legion (Other European Leagues) as home and Oldham Athletic "
+v.message("Pick the teams in Football Life 2026", "Pick Birmingham Legion (Other European Leagues) as home and Oldham Athletic "
           "(Other European Leagues) as away in Match > Local Match. FM24 squads and ratings are loaded. Put controller "
           "1 on Oldham Athletic (away).", "Automatic setup stopped: SPFL26 stayed on the unknown screen.")
 shot("6_manual")
 rx, ry = root.winfo_rootx(), root.winfo_rooty()
 dlg = ui.ChoiceDialog(root, (rx, ry, rx + root.winfo_width(), ry + root.winfo_height()),
-                      [dict(H), dict(A)], "FM24  ·  15 Jul 2032", lambda: None, lambda: None)
+                      [dict(H), dict(A)], "FM24  ·  15 Jul 2032", ["PES 2021", "Football Life 2026"], lambda i: None,
+                      lambda: None)
 for _ in range(10):
     root.update()
     time.sleep(0.05)

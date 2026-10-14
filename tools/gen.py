@@ -67,10 +67,21 @@ def gen_python():
         out.append(f"    ({r['fm_code']!r}, {r['pes_position']!r}),")
     out.append("]")
     out.append("")
-    out.append("SPARE_SLOTS = [  # SPFL26 team ids lent to clubs SPFL26 does not have, in order of use")
+    out.append("SPARE_SLOTS = {  # game: team ids lent to clubs the game cannot pick, in order of use")
+    slots: dict[str, list] = {}
     for r in load("spfl_slots"):
-        out.append(f"    {r['team_id']},  # {r['original_name']}")
-    out.append("]")
+        slots.setdefault(r["game"], []).append(r)
+    for game, rows in slots.items():
+        out.append(f"    {game!r}: [")
+        for r in rows:
+            out.append(f"        {r['team_id']},  # {r['original_name']}")
+        out.append("    ],")
+    out.append("}")
+    out.append("")
+    out.append("GAME_EXES = {  # PE link timestamp of the game exe: (game, edit block owner global: [[global]+0x48])")
+    for r in load("game_exes"):
+        out.append(f"    {r['pe_timestamp']}: ({r['game']!r}, {r['owner_global']}),  # {r['exe']} {r['version']}")
+    out.append("}")
     open(os.path.join(ROOT, "bridge", "gen_structs.py"), "w", encoding="utf-8").write("\n".join(out) + "\n")
 
 
@@ -86,6 +97,11 @@ def gen_lua():
     out.append("G.off = {")
     for r in sp:
         out.append(f'    {r["field"]} = {r["offset"]},  -- {r["struct"]}: {r["meaning"]}')
+    out.append("}")
+    out.append("G.exes = {  -- PE link timestamp of the game exe -> game and edit block owner ([[global]+0x48])")
+    for r in load("game_exes"):
+        out.append(f'    [{r["pe_timestamp"]}] = {{ game = "{r["game"]}", owner_global = {r["owner_global"]} }},'
+                   f'  -- {r["exe"]} {r["version"].split(" (")[0]}')
     out.append("}")
     out.append("G.hooks = {")
     for r in hooks:

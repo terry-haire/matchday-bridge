@@ -62,7 +62,11 @@ class Root:
 class TestBridge(M.Bridge):
     def __init__(self, md):
         self.root, self.msg, self.detail = Root(), Var("msg"), Var("detail")
-        self.fm_dir, self.spfl_dir = None, M.install.find_spfl26()
+        import games
+        self.fm_dir, self.game = None, games.spfl26(M.install.find_spfl26())
+        self.games = [self.game]
+        self.setup_done = M.threading.Event()
+        self.setup_done.set()
         self.matchday, self.busy, self.writer, self.plan = md, True, None, None
         self.reader = self.prompted_for = None
 
@@ -89,7 +93,7 @@ t0 = time.time()
 while not os.path.exists(job + ".out") and time.time() - t0 < 900:
     time.sleep(2)
 print("SPFL job:", open(job + ".out", encoding="utf-8").read()[-1500:] if os.path.exists(job + ".out") else "TIMEOUT")
-res = dict(ln.split("=", 1) for ln in open(os.path.join(b.spfl_dir, "SiderAddons", "matchday", "result.txt")).read().split()
+res = dict(ln.split("=", 1) for ln in open(os.path.join(b.game.matchday, "result.txt")).read().split()
            if "=" in ln)
 hg, ag = int(res["home"]), int(res["away"])
 t0 = time.time()

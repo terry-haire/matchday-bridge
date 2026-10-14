@@ -30,6 +30,7 @@ ctypes.windll.shcore.SetProcessDpiAwareness(1)
 root = tk.Tk()
 root.geometry("+60+60")
 br = mb.Bridge(root)
+br.game = next(g for g in br.games if g.key == "spfl26")   # a Football Life job (PES 2021 is games[0])
 md = json.load(open(os.path.join(ROOT, "tests", "sample_matchday.json"), encoding="utf-8"))
 md = {**md, "home": {**md["home"], "name": "Birmingham Legion", "short": "Birmingham", "human": False},
       "away": {**md["away"], "name": "Oldham Athletic", "short": "Oldham", "human": True}}
@@ -51,7 +52,7 @@ def poll():
         OUT.write(f"{time.time() - T0:6.1f}s {t} | {br.view.body_var.get()[:120]} | {br.view.detail_var.get()[:120]}\n")
         OUT.flush()
         snap(f"{len(seen)}")
-    if t in ("Your turn", "Pick the teams in SPFL26") or time.time() - T0 > 240:
+    if t in ("Your turn", "Pick the teams in Football Life 2026") or time.time() - T0 > 240:
         snap("final")
         OUT.write(f"END {t}\n")
         OUT.close()

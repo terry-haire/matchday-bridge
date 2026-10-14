@@ -1,4 +1,4 @@
-"""Offline checks of the SPFL26 squad builder against the local SPFL26 install (no game running needed)."""
+"""Offline checks of the squad builder against the local SPFL26 and PES 2021 installs (no game running needed)."""
 import copy
 import datetime
 import json
@@ -11,10 +11,11 @@ sys.path.insert(0, os.path.join(ROOT, "bridge"))
 
 import install  # noqa: E402
 from fl26db import cstr  # noqa: E402
-from gen_structs import SPARE_SLOTS  # noqa: E402
+from gen_structs import SPARE_SLOTS as SLOTS  # noqa: E402
 from spfl_build import MatchBuilder, request_lines  # noqa: E402
 from spfl_db import PesDb  # noqa: E402
 
+SPARE_SLOTS, PES_HOSTS = SLOTS["spfl26"], SLOTS["pes2021"]
 SAMPLE = json.load(open(os.path.join(ROOT, "tests", "sample_matchday.json"), encoding="utf-8"))
 DATE = datetime.date(2032, 7, 15)
 
@@ -37,7 +38,7 @@ def check_plan(db, b, plan, md):
         want = [p["name"] for p in md[side]["players"]]
         assert sorted(names) == sorted(want), (side, names, want)
         if pl["spare_slot"]:
-            assert db.team_name(pl["spfl_team"]) == md[side]["name"], side
+            assert db.team_name(pl["spfl_team"]).lower() == md[side]["name"].lower(), side
     assert len(used) == len(set(used)), "an SPFL record is used twice"
 
 
@@ -141,6 +142,61 @@ def test_human_club_keeps_its_slot():
             assert plan[other]["spfl_team"] == SPARE_SLOTS[1], (home, away, plan[other]["spfl_team"])
         check_plan(db, None, plan, md)
     assert seen == [SPARE_SLOTS[0]] * 3, seen
+
+
+def load_pes_db():
+    g = install.find_pes2021()
+    assert g, "eFootball PES 2021 not found"
+    return PesDb.load(g)
+
+
+def test_pes_hosts():
+    """PES 2021 LITE's Local Match only has five clubs: both FM24 clubs play in them, the human club in the first
+    (Manchester United's slot) every time, under their FM24 names in PES capitals and without a league to pick."""
+    md = copy.deepcopy(SAMPLE)
+    md["away"]["human"] = True
+    db = load_pes_db()
+    b = MatchBuilder(db, None, "pes2021")
+    plan = b.build(md, DATE)
+    assert plan["away"]["spfl_team"] == PES_HOSTS[0] and plan["home"]["spfl_team"] == PES_HOSTS[1], plan
+    assert plan["home"]["slot_name"] == "ARSENAL" and plan["away"]["spfl_name"] == "OLDHAM ATHLETIC"
+    assert all(plan[s]["spare_slot"] and plan[s]["league"] == "" for s in ("home", "away"))
+    check_plan(db, b, plan, md)
+    req = request_lines(md, plan, "FM24", "15 Jul 2032")
+    assert "away_rename=OLDHAM ATHLETIC" in req and "home_rename=ATLANTA UNITED FC" in req
+    assert "home_where=\n" in req and "away_abbr=OLD" in req
+
+
+def test_pes_own_club():
+    """An FM24 club that is one of the five keeps its own slot (and its own players' records); "ARSENAL" is in PES
+    2021 twice, the Local Match one (101) counts. Clubs the game has but Local Match can't pick get a host."""
+    md = copy.deepcopy(SAMPLE)
+    md["home"]["name"], md["home"]["short"] = "Manchester United", "Man Utd"
+    md["away"]["name"], md["away"]["short"] = "Liverpool", "Liverpool"
+    db = load_pes_db()
+    b = MatchBuilder(db, None, "pes2021")
+    assert b.find_team({"name": "Arsenal", "short": "Arsenal"}) == 101
+    assert b.find_team({"name": "Liverpool", "short": "Liverpool"}) is None
+    plan = b.build(md, DATE)
+    assert plan["home"]["spfl_team"] == 100 and not plan["home"]["spare_slot"]
+    assert plan["away"]["spfl_team"] == PES_HOSTS[1] and plan["away"]["spare_slot"]
+    check_plan(db, b, plan, md)
+
+
+def test_pes_player_names():
+    """PES 2021 files players as "M. SALAH" (its Japanese name comes first): FM24's Mohamed Salah is still found, so
+    his own face is lent to the record he plays in; his PES 2021 age (2020 database) matches his birth year."""
+    db = load_pes_db()
+    salah = 57123
+    md = copy.deepcopy(SAMPLE)
+    md["home"]["players"][9] = {**md["home"]["players"][9], "name": "Mohamed Salah", "first": "Mohamed",
+                                "last": "Salah", "common": "", "dob": "1992-06-15"}
+    b = MatchBuilder(db, {salah}, "pes2021")
+    assert b._named(md["home"]["players"][9]) == [salah]
+    plan = b.build(md, DATE)
+    ids = dict(zip((p["name"] for p in plan["home"]["players"]), plan["home"]["ids"]))
+    assert b.face_lends.get(ids["Mohamed Salah"]) == salah, b.face_lends
+    check_plan(db, b, plan, md)
 
 
 if __name__ == "__main__":
